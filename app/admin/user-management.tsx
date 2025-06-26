@@ -12,30 +12,7 @@ import {
   Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { 
-  ChevronLeft, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Ban, 
-  CheckCircle, 
-  XCircle, 
-  Edit, 
-  Trash2, 
-  Shield, 
-  Crown, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  Coins, 
-  TrendingUp, 
-  AlertTriangle,
-  Download,
-  Upload,
-  RefreshCw,
-  UserPlus,
-  Settings
-} from 'lucide-react-native';
+import { ChevronLeft, Search, ListFilter as Filter, MoveVertical as MoreVertical, Ban, CircleCheck as CheckCircle, Circle as XCircle, LocationEdit as Edit, Trash2, Shield, Crown, Mail, Phone, Calendar, Coins, TrendingUp, TriangleAlert as AlertTriangle, Download, Upload, RefreshCw, UserPlus, Settings } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
