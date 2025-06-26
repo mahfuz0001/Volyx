@@ -8,7 +8,34 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, Users, ChartBar as BarChart3, Settings, Package, TrendingUp, DollarSign, Eye, LogOut, Bell, Shield, Activity, Database, Zap, TriangleAlert as AlertTriangle } from 'lucide-react-native';
+import { 
+  Plus, 
+  Users, 
+  BarChart3, 
+  Settings, 
+  Package, 
+  TrendingUp, 
+  DollarSign, 
+  Eye, 
+  
+  LogOut, 
+  Bell, 
+  Shield, 
+  Activity, 
+  Database, 
+  Zap, 
+  AlertTriangle,
+  FileText,
+  CreditCard,
+  Target,
+  Globe,
+  Lock,
+  Coins,
+  PieChart,
+  Calendar,
+  MessageSquare,
+  Headphones
+} from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
@@ -31,6 +58,27 @@ export default function AdminDashboard() {
 
   const adminActions = [
     {
+      title: 'User Management',
+      subtitle: 'Manage users, roles, and permissions',
+      icon: Users,
+      route: '/admin/user-management',
+      color: '#059669',
+    },
+    {
+      title: 'Content Management',
+      subtitle: 'Manage auctions, categories, and content',
+      icon: FileText,
+      route: '/admin/content-management',
+      color: '#7c3aed',
+    },
+    {
+      title: 'Financial Overview',
+      subtitle: 'Revenue, transactions, and financial reports',
+      icon: CreditCard,
+      route: '/admin/financial-overview',
+      color: '#dc2626',
+    },
+    {
       title: 'Add New Product',
       subtitle: 'Create a new auction item',
       icon: Plus,
@@ -38,46 +86,39 @@ export default function AdminDashboard() {
       color: '#1e40af',
     },
     {
-      title: 'Manage Users',
-      subtitle: 'View and manage user accounts',
-      icon: Users,
-      route: '/admin/manage-users',
-      color: '#059669',
-    },
-    {
       title: 'Analytics Dashboard',
       subtitle: 'View detailed analytics and reports',
       icon: BarChart3,
       route: '/admin/analytics',
-      color: '#dc2626',
-    },
-    {
-      title: 'Notification Center',
-      subtitle: 'Manage push notifications',
-      icon: Bell,
-      route: '/admin/notifications',
-      color: '#7c3aed',
-    },
-    {
-      title: 'System Health',
-      subtitle: 'Monitor system performance',
-      icon: Activity,
-      route: '/admin/system-health',
       color: '#ea580c',
     },
     {
-      title: 'Security Center',
-      subtitle: 'Security settings and monitoring',
-      icon: Shield,
-      route: '/admin/security',
+      title: 'Notification Center',
+      subtitle: 'Manage push notifications and campaigns',
+      icon: Bell,
+      route: '/admin/notifications',
       color: '#0891b2',
     },
     {
+      title: 'System Health',
+      subtitle: 'Monitor system performance and uptime',
+      icon: Activity,
+      route: '/admin/system-health',
+      color: '#65a30d',
+    },
+    {
+      title: 'Security Center',
+      subtitle: 'Security settings and threat monitoring',
+      icon: Shield,
+      route: '/admin/security',
+      color: '#be123c',
+    },
+    {
       title: 'Database Management',
-      subtitle: 'Manage database and backups',
+      subtitle: 'Manage database, backups, and migrations',
       icon: Database,
       route: '/admin/database',
-      color: '#65a30d',
+      color: '#4338ca',
     },
     {
       title: 'View App',
@@ -148,6 +189,37 @@ export default function AdminDashboard() {
     },
   ];
 
+  const quickStats = [
+    {
+      title: 'Revenue This Month',
+      value: '$127,456',
+      change: '+18.2%',
+      icon: DollarSign,
+      color: '#16a34a',
+    },
+    {
+      title: 'New Users Today',
+      value: '156',
+      change: '+24.1%',
+      icon: Users,
+      color: '#3b82f6',
+    },
+    {
+      title: 'Active Auctions',
+      value: '89',
+      change: '+5.7%',
+      icon: Package,
+      color: '#f59e0b',
+    },
+    {
+      title: 'System Uptime',
+      value: '99.9%',
+      change: '+0.1%',
+      icon: Activity,
+      color: '#10b981',
+    },
+  ];
+
   return (
     <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
       <SafeAreaView style={styles.container}>
@@ -163,12 +235,31 @@ export default function AdminDashboard() {
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Stats Grid */}
+          {/* Quick Stats */}
+          <View style={styles.quickStatsGrid}>
+            {quickStats.map((stat, index) => {
+              const IconComponent = stat.icon;
+              return (
+                <AnimatedCard key={stat.title} delay={index * 100} style={styles.quickStatCard}>
+                  <View style={[styles.quickStatIcon, { backgroundColor: stat.color }]}>
+                    <IconComponent size={20} color="#ffffff" />
+                  </View>
+                  <Text style={styles.quickStatValue}>{stat.value}</Text>
+                  <Text style={styles.quickStatTitle}>{stat.title}</Text>
+                  <Text style={[styles.quickStatChange, { color: stat.color }]}>
+                    {stat.change}
+                  </Text>
+                </AnimatedCard>
+              );
+            })}
+          </View>
+
+          {/* Main Stats Grid */}
           <View style={styles.statsGrid}>
             {adminStats.map((stat, index) => {
               const IconComponent = stat.icon;
               return (
-                <AnimatedCard key={stat.title} delay={index * 100} style={styles.statCard}>
+                <AnimatedCard key={stat.title} delay={400 + index * 100} style={styles.statCard}>
                   <View style={[styles.statIcon, { backgroundColor: stat.color }]}>
                     <IconComponent size={24} color="#ffffff" />
                   </View>
@@ -184,7 +275,7 @@ export default function AdminDashboard() {
 
           {/* System Alerts */}
           {systemAlerts.length > 0 && (
-            <AnimatedCard delay={400} style={styles.section}>
+            <AnimatedCard delay={800} style={styles.section}>
               <Text style={styles.sectionTitle}>System Alerts</Text>
               <View style={styles.alertsList}>
                 {systemAlerts.map((alert) => (
@@ -206,12 +297,12 @@ export default function AdminDashboard() {
 
           {/* Quick Actions */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Quick Actions</Text>
+            <Text style={styles.sectionTitle}>Management Tools</Text>
             <View style={styles.actionsGrid}>
               {adminActions.map((action, index) => {
                 const IconComponent = action.icon;
                 return (
-                  <AnimatedCard key={action.title} delay={500 + index * 100}>
+                  <AnimatedCard key={action.title} delay={900 + index * 100}>
                     <TouchableOpacity
                       style={styles.actionCard}
                       onPress={() => router.push(action.route as any)}
@@ -229,7 +320,7 @@ export default function AdminDashboard() {
           </View>
 
           {/* Recent Activity */}
-          <AnimatedCard delay={800} style={styles.section}>
+          <AnimatedCard delay={1200} style={styles.section}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
             <View style={styles.activityList}>
               {recentActivity.map((activity) => {
@@ -250,7 +341,7 @@ export default function AdminDashboard() {
           </AnimatedCard>
 
           {/* Performance Overview */}
-          <AnimatedCard delay={900} style={styles.section}>
+          <AnimatedCard delay={1300} style={styles.section}>
             <Text style={styles.sectionTitle}>Performance Overview</Text>
             <View style={styles.performanceGrid}>
               <View style={styles.performanceCard}>
@@ -313,11 +404,55 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  statsGrid: {
+  quickStatsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     marginTop: 20,
+    marginBottom: 16,
+  },
+  quickStatCard: {
+    width: '48%',
+    backgroundColor: '#ffffff',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+    marginBottom: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  quickStatIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  quickStatValue: {
+    fontSize: 18,
+    fontFamily: 'Inter-Bold',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  quickStatTitle: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#6b7280',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  quickStatChange: {
+    fontSize: 10,
+    fontFamily: 'Inter-SemiBold',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     marginBottom: 32,
   },
   statCard: {
