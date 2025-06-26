@@ -7,6 +7,10 @@ export default function AdminLayout() {
       <Stack.Screen name="add-product" />
       <Stack.Screen name="manage-users" />
       <Stack.Screen name="analytics" />
+      <Stack.Screen name="notifications" />
+      <Stack.Screen name="system-health" />
+      <Stack.Screen name="security" />
+      <Stack.Screen name="database" />
     </Stack>
   );
 }

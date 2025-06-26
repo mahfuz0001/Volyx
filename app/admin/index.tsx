@@ -8,7 +8,23 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus, Users, ChartBar as BarChart3, Settings, Package, TrendingUp, DollarSign, Eye, LogOut } from 'lucide-react-native';
+import { 
+  Plus, 
+  Users, 
+  ChartBar as BarChart3, 
+  Settings, 
+  Package, 
+  TrendingUp, 
+  DollarSign, 
+  Eye, 
+  LogOut,
+  Bell,
+  Shield,
+  Activity,
+  Database,
+  Zap,
+  AlertTriangle
+} from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
@@ -23,10 +39,10 @@ export default function AdminDashboard() {
   };
 
   const adminStats = [
-    { title: 'Total Users', value: '1,247', icon: Users, color: '#3b82f6' },
-    { title: 'Active Auctions', value: '23', icon: Package, color: '#10b981' },
-    { title: 'Revenue Today', value: '$2,847', icon: DollarSign, color: '#f59e0b' },
-    { title: 'Total Bids', value: '5,692', icon: TrendingUp, color: '#ef4444' },
+    { title: 'Total Users', value: '12,847', icon: Users, color: '#3b82f6', change: '+12.5%' },
+    { title: 'Active Auctions', value: '234', icon: Package, color: '#10b981', change: '+8.3%' },
+    { title: 'Revenue Today', value: '$15,678', icon: DollarSign, color: '#f59e0b', change: '+23.1%' },
+    { title: 'Total Bids', value: '8,765', icon: TrendingUp, color: '#ef4444', change: '+15.7%' },
   ];
 
   const adminActions = [
@@ -45,18 +61,106 @@ export default function AdminDashboard() {
       color: '#059669',
     },
     {
-      title: 'Analytics',
+      title: 'Analytics Dashboard',
       subtitle: 'View detailed analytics and reports',
       icon: BarChart3,
       route: '/admin/analytics',
       color: '#dc2626',
     },
     {
+      title: 'Notification Center',
+      subtitle: 'Manage push notifications',
+      icon: Bell,
+      route: '/admin/notifications',
+      color: '#7c3aed',
+    },
+    {
+      title: 'System Health',
+      subtitle: 'Monitor system performance',
+      icon: Activity,
+      route: '/admin/system-health',
+      color: '#ea580c',
+    },
+    {
+      title: 'Security Center',
+      subtitle: 'Security settings and monitoring',
+      icon: Shield,
+      route: '/admin/security',
+      color: '#0891b2',
+    },
+    {
+      title: 'Database Management',
+      subtitle: 'Manage database and backups',
+      icon: Database,
+      route: '/admin/database',
+      color: '#65a30d',
+    },
+    {
       title: 'View App',
       subtitle: 'Switch to user view',
       icon: Eye,
       route: '/(tabs)',
-      color: '#7c3aed',
+      color: '#9333ea',
+    },
+  ];
+
+  const recentActivity = [
+    {
+      id: '1',
+      type: 'user_registered',
+      message: 'New user registered: john@example.com',
+      time: '2 minutes ago',
+      icon: Users,
+      color: '#3b82f6',
+    },
+    {
+      id: '2',
+      type: 'auction_ended',
+      message: 'Auction ended: Vintage Camera Collection',
+      time: '15 minutes ago',
+      icon: Package,
+      color: '#10b981',
+    },
+    {
+      id: '3',
+      type: 'high_bid',
+      message: 'High bid placed: $1,250 on Comic Collection',
+      time: '1 hour ago',
+      icon: TrendingUp,
+      color: '#f59e0b',
+    },
+    {
+      id: '4',
+      type: 'system_alert',
+      message: 'Memory usage reached 85% - monitoring',
+      time: '2 hours ago',
+      icon: AlertTriangle,
+      color: '#ef4444',
+    },
+    {
+      id: '5',
+      type: 'payment_processed',
+      message: 'Payment processed: $49.99 Connects purchase',
+      time: '3 hours ago',
+      icon: DollarSign,
+      color: '#16a34a',
+    },
+  ];
+
+  const systemAlerts = [
+    {
+      id: '1',
+      type: 'warning',
+      title: 'High Memory Usage',
+      message: 'Server memory usage is at 85%. Consider scaling up.',
+      time: '2 hours ago',
+    },
+    {
+      id: '2',
+      type: 'info',
+      title: 'Scheduled Maintenance',
+      message: 'Database maintenance scheduled for tonight at 2 AM UTC.',
+      time: '1 day ago',
     },
   ];
 
@@ -86,10 +190,35 @@ export default function AdminDashboard() {
                   </View>
                   <Text style={styles.statValue}>{stat.value}</Text>
                   <Text style={styles.statTitle}>{stat.title}</Text>
+                  <Text style={[styles.statChange, { color: stat.color }]}>
+                    {stat.change}
+                  </Text>
                 </AnimatedCard>
               );
             })}
           </View>
+
+          {/* System Alerts */}
+          {systemAlerts.length > 0 && (
+            <AnimatedCard delay={400} style={styles.section}>
+              <Text style={styles.sectionTitle}>System Alerts</Text>
+              <View style={styles.alertsList}>
+                {systemAlerts.map((alert) => (
+                  <View key={alert.id} style={styles.alertItem}>
+                    <View style={[
+                      styles.alertIndicator,
+                      { backgroundColor: alert.type === 'warning' ? '#f59e0b' : '#3b82f6' }
+                    ]} />
+                    <View style={styles.alertContent}>
+                      <Text style={styles.alertTitle}>{alert.title}</Text>
+                      <Text style={styles.alertMessage}>{alert.message}</Text>
+                      <Text style={styles.alertTime}>{alert.time}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            </AnimatedCard>
+          )}
 
           {/* Quick Actions */}
           <View style={styles.section}>
@@ -98,7 +227,7 @@ export default function AdminDashboard() {
               {adminActions.map((action, index) => {
                 const IconComponent = action.icon;
                 return (
-                  <AnimatedCard key={action.title} delay={200 + index * 100}>
+                  <AnimatedCard key={action.title} delay={500 + index * 100}>
                     <TouchableOpacity
                       style={styles.actionCard}
                       onPress={() => router.push(action.route as any)}
@@ -116,29 +245,49 @@ export default function AdminDashboard() {
           </View>
 
           {/* Recent Activity */}
-          <AnimatedCard delay={600} style={styles.section}>
+          <AnimatedCard delay={800} style={styles.section}>
             <Text style={styles.sectionTitle}>Recent Activity</Text>
             <View style={styles.activityList}>
-              <View style={styles.activityItem}>
-                <View style={styles.activityDot} />
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityText}>New user registered: john@example.com</Text>
-                  <Text style={styles.activityTime}>2 minutes ago</Text>
-                </View>
+              {recentActivity.map((activity) => {
+                const IconComponent = activity.icon;
+                return (
+                  <View key={activity.id} style={styles.activityItem}>
+                    <View style={[styles.activityIcon, { backgroundColor: activity.color }]}>
+                      <IconComponent size={16} color="#ffffff" />
+                    </View>
+                    <View style={styles.activityContent}>
+                      <Text style={styles.activityText}>{activity.message}</Text>
+                      <Text style={styles.activityTime}>{activity.time}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          </AnimatedCard>
+
+          {/* Performance Overview */}
+          <AnimatedCard delay={900} style={styles.section}>
+            <Text style={styles.sectionTitle}>Performance Overview</Text>
+            <View style={styles.performanceGrid}>
+              <View style={styles.performanceCard}>
+                <Zap size={20} color="#f59e0b" />
+                <Text style={styles.performanceValue}>145ms</Text>
+                <Text style={styles.performanceLabel}>Avg Response Time</Text>
               </View>
-              <View style={styles.activityItem}>
-                <View style={[styles.activityDot, { backgroundColor: '#10b981' }]} />
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityText}>Auction ended: Vintage Camera</Text>
-                  <Text style={styles.activityTime}>15 minutes ago</Text>
-                </View>
+              <View style={styles.performanceCard}>
+                <Activity size={20} color="#16a34a" />
+                <Text style={styles.performanceValue}>99.9%</Text>
+                <Text style={styles.performanceLabel}>Uptime</Text>
               </View>
-              <View style={styles.activityItem}>
-                <View style={[styles.activityDot, { backgroundColor: '#f59e0b' }]} />
-                <View style={styles.activityContent}>
-                  <Text style={styles.activityText}>High bid placed: $1,250 on Comic Collection</Text>
-                  <Text style={styles.activityTime}>1 hour ago</Text>
-                </View>
+              <View style={styles.performanceCard}>
+                <Database size={20} color="#3b82f6" />
+                <Text style={styles.performanceValue}>23ms</Text>
+                <Text style={styles.performanceLabel}>DB Response</Text>
+              </View>
+              <View style={styles.performanceCard}>
+                <Shield size={20} color="#7c3aed" />
+                <Text style={styles.performanceValue}>0</Text>
+                <Text style={styles.performanceLabel}>Security Issues</Text>
               </View>
             </View>
           </AnimatedCard>
@@ -219,6 +368,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#6b7280',
     textAlign: 'center',
+    marginBottom: 4,
+  },
+  statChange: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
   },
   section: {
     marginBottom: 32,
@@ -228,6 +382,48 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-SemiBold',
     color: '#111827',
     marginBottom: 16,
+  },
+  alertsList: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  alertItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  alertIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 6,
+    marginRight: 12,
+  },
+  alertContent: {
+    flex: 1,
+  },
+  alertTitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  alertMessage: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#6b7280',
+    marginBottom: 4,
+  },
+  alertTime: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#9ca3af',
   },
   actionsGrid: {
     flexDirection: 'row',
@@ -284,12 +480,12 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     marginBottom: 16,
   },
-  activityDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#3b82f6',
-    marginTop: 6,
+  activityIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   activityContent: {
@@ -305,5 +501,36 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#6b7280',
+  },
+  performanceGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  performanceCard: {
+    width: '48%',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  performanceValue: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    color: '#111827',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  performanceLabel: {
+    fontSize: 12,
+    fontFamily: 'Inter-Medium',
+    color: '#6b7280',
+    textAlign: 'center',
   },
 });
