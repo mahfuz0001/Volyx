@@ -5,13 +5,12 @@ import {
   StyleSheet,
   SafeAreaView,
   ScrollView,
-  Touchable,
   TouchableOpacity,
   Switch,
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Shield, Lock, Key, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Eye, EyeOff, Wifi, Globe, UserCheck, Ban, Activity, Clock, RefreshCw } from 'lucide-react-native';
+import { ChevronLeft, Shield, Lock, Key, AlertTriangle, CheckCircle, XCircle, Eye, EyeOff, Wifi, Globe, UserCheck, Ban, Activity, Clock, RefreshCw } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';

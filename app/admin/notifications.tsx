@@ -12,7 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Bell, Send, Users, Target, Calendar, Clock, Settings, Plus, LocationEdit as Edit, Trash2, Eye, CircleCheck as CheckCircle, CircleAlert as AlertCircle } from 'lucide-react-native';
+import { ChevronLeft, Bell, Send, Users, Target, Calendar, Clock, Settings, Plus, Edit, Trash2, Eye, CheckCircle, AlertCircle } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
