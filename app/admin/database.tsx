@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Database, HardDrive, Download, Upload, RefreshCw, Trash2, Archive, Clock, CheckCircle, AlertTriangle, XCircle, BarChart3, Activity, Zap, Shield } from 'lucide-react-native';
+import { ChevronLeft, Database, HardDrive, Download, Upload, RefreshCw, Trash2, Archive, Clock, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle, Circle as XCircle, ChartBar as BarChart3, Activity, Zap, Shield } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
