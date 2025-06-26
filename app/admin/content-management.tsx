@@ -12,30 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { 
-  ChevronLeft, 
-  Plus, 
-  Search, 
-  Filter, 
-  MoreVertical, 
-  Edit, 
-  Trash2, 
-  Eye, 
-  EyeOff,
-  Upload,
-  Download,
-  RefreshCw,
-  Calendar,
-  Tag,
-  Star,
-  TrendingUp,
-  Package,
-  Image as ImageIcon,
-  FileText,
-  Settings,
-  Copy,
-  ExternalLink
-} from 'lucide-react-native';
+import { ChevronLeft, Plus, Search, ListFilter as Filter, MoveVertical as MoreVertical, LocationEdit as Edit, Trash2, Eye, EyeOff, Upload, Download, RefreshCw, Calendar, Tag, Star, TrendingUp, Package, Image as ImageIcon, FileText, Settings, Copy, ExternalLink } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
