@@ -9,23 +9,7 @@ import {
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { 
-  ChevronLeft, 
-  Server, 
-  Database, 
-  Wifi,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Clock,
-  Activity,
-  HardDrive,
-  Cpu,
-  MemoryStick,
-  Globe,
-  Shield,
-  Zap
-} from 'lucide-react-native';
+import { ChevronLeft, Server, Database, Wifi, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Clock, Activity, HardDrive, Cpu, MemoryStick, Globe, Shield, Zap } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';

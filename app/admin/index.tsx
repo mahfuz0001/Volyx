@@ -8,23 +8,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { 
-  Plus, 
-  Users, 
-  ChartBar as BarChart3, 
-  Settings, 
-  Package, 
-  TrendingUp, 
-  DollarSign, 
-  Eye, 
-  LogOut,
-  Bell,
-  Shield,
-  Activity,
-  Database,
-  Zap,
-  AlertTriangle
-} from 'lucide-react-native';
+import { Plus, Users, ChartBar as BarChart3, Settings, Package, TrendingUp, DollarSign, Eye, LogOut, Bell, Shield, Activity, Database, Zap, TriangleAlert as AlertTriangle } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
