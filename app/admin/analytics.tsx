@@ -9,20 +9,7 @@ import {
   Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { 
-  ChevronLeft, 
-  TrendingUp, 
-  Users, 
-  DollarSign, 
-  Package,
-  Calendar,
-  Download,
-  Filter,
-  RefreshCw,
-  BarChart3,
-  PieChart,
-  Activity
-} from 'lucide-react-native';
+import { ChevronLeft, TrendingUp, Users, DollarSign, Package, Calendar, Download, ListFilter as Filter, RefreshCw, ChartBar as BarChart3, ChartPie as PieChart, Activity } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
