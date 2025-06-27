@@ -10,24 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { 
-  User, 
-  Settings, 
-  Bell, 
-  HelpCircle, 
-  LogOut, 
-  Trophy, 
-  Gavel, 
-  Coins, 
-  Calendar, 
-  ChevronRight,
-  Eye,
-  Heart,
-  History,
-  FileText,
-  UserCircle,
-  Shield
-} from 'lucide-react-native';
+import { User, Settings, Bell, Circle as HelpCircle, LogOut, Trophy, Gavel, Coins, Calendar, ChevronRight, Eye, Heart, History, FileText, CircleUser as UserCircle, Shield } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedCard from '@/components/AnimatedCard';
 import ConnectsBalance from '@/components/ConnectsBalance';
