@@ -4,10 +4,9 @@ import { config } from './lib/config';
 export default {
   schema: './lib/schema.ts',
   out: './drizzle',
-  dialect: "postgresql",
-  driver: "pglite",
+  driver: 'pg',
   dbCredentials: {
-    url: config.database.url,
+    connectionString: config.database.url,
   },
   verbose: true,
   strict: true,

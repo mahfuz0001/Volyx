@@ -4,8 +4,7 @@
     "strict": true,
     "paths": {
       "@/*": ["./*"]
-    },
-    "jsx": "react-native"
+    }
   },
   "include": [
     "**/*.ts",
@@ -13,5 +12,5 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts",
     "nativewind-env.d.ts"
-, "Volyx/drizzle.config.js"  ]
+  ]
 }
