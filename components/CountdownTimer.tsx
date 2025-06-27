@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Clock } from 'lucide-react-native';
+import { Clock, AlertTriangle } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface CountdownTimerProps {
   endTime: Date;
@@ -49,37 +50,39 @@ export default function CountdownTimer({
   if (compact) {
     return (
       <View style={[styles.compactContainer, style]}>
-        <Clock size={12} color={isUrgent ? '#ef4444' : '#6b7280'} />
-        <Text style={[
-          styles.compactText,
-          { color: isUrgent ? '#ef4444' : '#6b7280' }
-        ]}>
-          {timeLeft}
-        </Text>
+        <LinearGradient
+          colors={isUrgent ? ['#FF3B30', '#FF6B35'] : ['#1A2B42', '#2D4A6B']}
+          style={styles.compactGradient}
+        >
+          <Clock size={10} color="#FFFFFF" />
+          <Text style={styles.compactText}>
+            {timeLeft}
+          </Text>
+        </LinearGradient>
       </View>
     );
   }
 
   return (
     <View style={[styles.container, style]}>
-      <View style={[
-        styles.timerBox,
-        { backgroundColor: isUrgent ? '#fef2f2' : '#f0f9ff' }
-      ]}>
+      <LinearGradient
+        colors={isUrgent ? ['#FF3B30', '#FF6B35'] : ['#1A2B42', '#2D4A6B']}
+        style={styles.timerBox}
+      >
         <Clock 
-          size={16} 
-          color={isUrgent ? '#ef4444' : '#1e40af'} 
+          size={14} 
+          color="#FFFFFF"
           style={styles.icon}
         />
-        <Text style={[
-          styles.timerText,
-          { color: isUrgent ? '#ef4444' : '#1e40af' }
-        ]}>
-          {timeLeft === 'ENDED' ? 'ENDED' : `${timeLeft}`}
+        <Text style={styles.timerText}>
+          {timeLeft === 'ENDED' ? 'ENDED' : timeLeft}
         </Text>
-      </View>
+      </LinearGradient>
       {isUrgent && timeLeft !== 'ENDED' && (
-        <Text style={styles.urgentText}>Ending Soon!</Text>
+        <View style={styles.urgentIndicator}>
+          <AlertTriangle size={12} color="#FF3B30" />
+          <Text style={styles.urgentText}>Ending Soon!</Text>
+        </View>
       )}
     </View>
   );
@@ -90,34 +93,50 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   compactContainer: {
+    alignSelf: 'flex-start',
+  },
+  compactGradient: {
     flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
   compactText: {
-    fontSize: 12,
-    fontFamily: 'Inter-Medium',
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
     marginLeft: 4,
   },
   timerBox: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
+    paddingVertical: 8,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   icon: {
     marginRight: 6,
   },
   timerText: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
+    fontSize: 12,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+  },
+  urgentIndicator: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
   },
   urgentText: {
     fontSize: 10,
-    fontFamily: 'Inter-Medium',
-    color: '#ef4444',
-    marginTop: 2,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FF3B30',
+    marginLeft: 4,
   },
 });
