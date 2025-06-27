@@ -10,18 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  ChevronLeft,
-  Heart,
-  Clock,
-  TrendingUp,
-  Eye,
-  Filter,
-  SortAsc,
-  Trash2,
-  Plus,
-  Search,
-} from 'lucide-react-native';
+import { ChevronLeft, Heart, Clock, TrendingUp, Eye, ListFilter as Filter, Import as SortAsc, Trash2, Plus, Search } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedCard from '@/components/AnimatedCard';
 import CountdownTimer from '@/components/CountdownTimer';

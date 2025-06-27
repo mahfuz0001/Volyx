@@ -10,22 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  ChevronLeft,
-  Search,
-  MessageCircle,
-  Mail,
-  Phone,
-  HelpCircle,
-  Book,
-  Video,
-  Users,
-  Send,
-  ChevronRight,
-  ChevronDown,
-  ChevronUp,
-  ExternalLink,
-} from 'lucide-react-native';
+import { ChevronLeft, Search, MessageCircle, Mail, Phone, Circle as HelpCircle, Book, Video, Users, Send, ChevronRight, ChevronDown, ChevronUp, ExternalLink } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedCard from '@/components/AnimatedCard';
 
