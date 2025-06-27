@@ -10,33 +10,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Bell,
-  Shield,
-  CreditCard,
-  Globe,
-  Moon,
-  Sun,
-  Volume2,
-  VolumeX,
-  Smartphone,
-  Mail,
-  MessageSquare,
-  Eye,
-  EyeOff,
-  Lock,
-  Key,
-  Trash2,
-  Download,
-  Upload,
-  HelpCircle,
-  FileText,
-  Users,
-  Star,
-  LogOut,
-} from 'lucide-react-native';
+import { ChevronLeft, ChevronRight, Bell, Shield, CreditCard, Globe, Moon, Sun, Volume2, VolumeX, Smartphone, Mail, MessageSquare, Eye, EyeOff, Lock, Key, Trash2, Download, Upload, Circle as HelpCircle, FileText, Users, Star, LogOut } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedCard from '@/components/AnimatedCard';
 

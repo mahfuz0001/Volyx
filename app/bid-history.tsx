@@ -9,18 +9,7 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  ChevronLeft,
-  TrendingUp,
-  TrendingDown,
-  Award,
-  Clock,
-  Calendar,
-  Filter,
-  Eye,
-  ArrowUpRight,
-  ArrowDownRight,
-} from 'lucide-react-native';
+import { ChevronLeft, TrendingUp, TrendingDown, Award, Clock, Calendar, ListFilter as Filter, Eye, ArrowUpRight, ArrowDownRight } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedCard from '@/components/AnimatedCard';
 
