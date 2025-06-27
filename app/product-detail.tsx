@@ -9,6 +9,7 @@ import {
   SafeAreaView,
   Modal,
   TextInput,
+  Alert,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import {
@@ -21,43 +22,34 @@ import {
   TrendingUp,
   Plus,
   Minus,
+  Gavel,
+  Shield,
+  Star,
+  Award,
 } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import CountdownTimer from '@/components/CountdownTimer';
 import ConnectsBalance from '@/components/ConnectsBalance';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import ErrorMessage from '@/components/ErrorMessage';
-import { useAuctionItem } from '@/hooks/useAuctions';
-import { useBidding } from '@/hooks/useBidding';
-import { useAuth } from '@/hooks/useAuth';
-import { urlFor } from '@/lib/sanity';
+import AnimatedCard from '@/components/AnimatedCard';
+import { mockAuctionItems } from '@/data/mockData';
 
 export default function ProductDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { user } = useAuth();
-  const { auction, loading, error } = useAuctionItem(id as string);
-  const { placeBid, loading: bidLoading, error: bidError, clearError } = useBidding();
-  
   const [showBidModal, setShowBidModal] = useState(false);
   const [bidAmount, setBidAmount] = useState('');
   const [isFavorite, setIsFavorite] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <LoadingSpinner size={48} />
-          <Text style={styles.loadingText}>Loading auction details...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Find the auction item by ID
+  const auction = mockAuctionItems.find(item => item.id === id);
 
-  if (error || !auction) {
+  if (!auction) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
-          <ErrorMessage message={error || 'Auction not found'} />
+          <Text style={styles.errorText}>Auction not found</Text>
           <TouchableOpacity 
             style={styles.backButton} 
             onPress={() => router.back()}
@@ -70,12 +62,9 @@ export default function ProductDetailScreen() {
   }
 
   const minimumBid = auction.currentBid + 10;
+  const userConnects = 2750; // Mock user balance
 
   const handleBidPress = () => {
-    if (!user) {
-      router.push('/auth');
-      return;
-    }
     setBidAmount(minimumBid.toString());
     setShowBidModal(true);
   };
@@ -83,14 +72,24 @@ export default function ProductDetailScreen() {
   const handlePlaceBid = async () => {
     const bid = parseInt(bidAmount, 10);
     if (bid < minimumBid) {
+      Alert.alert('Invalid Bid', `Your bid must be at least ${minimumBid} Connects`);
       return;
     }
 
-    const success = await placeBid(auction._id, bid);
-    if (success) {
+    if (bid > userConnects) {
+      Alert.alert('Insufficient Connects', 'You don\'t have enough Connects for this bid.');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Simulate bid placement
+    setTimeout(() => {
+      setIsLoading(false);
       setShowBidModal(false);
       setBidAmount('');
-    }
+      Alert.alert('Bid Placed!', `Your bid of ${bid} Connects has been placed successfully.`);
+    }, 1500);
   };
 
   const adjustBidAmount = (increment: number) => {
@@ -98,6 +97,27 @@ export default function ProductDetailScreen() {
     const newAmount = Math.max(minimumBid, current + increment);
     setBidAmount(newAmount.toString());
   };
+
+  const getRarityColor = (rarity: string) => {
+    switch (rarity) {
+      case 'legendary': return '#FFD700';
+      case 'epic': return '#9D4EDD';
+      case 'rare': return '#2196F3';
+      case 'uncommon': return '#4CAF50';
+      default: return '#9E9E9E';
+    }
+  };
+
+  const getRarityIcon = (rarity: string) => {
+    switch (rarity) {
+      case 'legendary': return Award;
+      case 'epic': return Star;
+      case 'rare': return Shield;
+      default: return null;
+    }
+  };
+
+  const RarityIcon = getRarityIcon('rare'); // Mock rarity
 
   return (
     <SafeAreaView style={styles.container}>
@@ -111,7 +131,7 @@ export default function ProductDetailScreen() {
         </TouchableOpacity>
         <View style={styles.headerActions}>
           <ConnectsBalance
-            balance={user?.connectsBalance || 0}
+            balance={userConnects}
             onPress={() => router.push('/get-connects')}
             showAddButton={false}
           />
@@ -135,7 +155,7 @@ export default function ProductDetailScreen() {
         {/* Product Image */}
         <View style={styles.imageContainer}>
           <Image 
-            source={{ uri: urlFor(auction.image).width(800).height(600).url() }} 
+            source={{ uri: auction.image }} 
             style={styles.productImage} 
           />
           {auction.isHot && (
@@ -144,25 +164,29 @@ export default function ProductDetailScreen() {
               <Text style={styles.hotText}>HOT AUCTION</Text>
             </View>
           )}
+          {RarityIcon && (
+            <View style={[styles.rarityBadge, { backgroundColor: getRarityColor('rare') }]}>
+              <RarityIcon size={12} color="#FFFFFF" />
+              <Text style={styles.rarityText}>RARE</Text>
+            </View>
+          )}
         </View>
 
         {/* Product Info */}
-        <View style={styles.productInfo}>
+        <AnimatedCard delay={100} style={styles.productInfo}>
           <Text style={styles.productTitle}>{auction.title}</Text>
-          <Text style={styles.productCategory}>{auction.category?.name}</Text>
+          <Text style={styles.productCategory}>{auction.category}</Text>
           <Text style={styles.productDescription}>{auction.description}</Text>
-        </View>
+          
+          {/* Authenticity Badge */}
+          <View style={styles.authenticityBadge}>
+            <Shield size={16} color="#16A34A" />
+            <Text style={styles.authenticityText}>Authenticated & Verified</Text>
+          </View>
+        </AnimatedCard>
 
         {/* Bidding Section */}
-        <View style={styles.biddingSection}>
-          {bidError && (
-            <ErrorMessage 
-              message={bidError} 
-              onDismiss={clearError}
-              type="error" 
-            />
-          )}
-          
+        <AnimatedCard delay={200} style={styles.biddingSection}>
           <View style={styles.currentBidContainer}>
             <Text style={styles.currentBidLabel}>Current Highest Bid</Text>
             <Text style={styles.currentBidAmount}>
@@ -174,27 +198,67 @@ export default function ProductDetailScreen() {
           </View>
 
           <CountdownTimer
-            endTime={new Date(auction.endTime)}
+            endTime={auction.endTime}
             style={styles.countdown}
           />
 
+          <View style={styles.auctionStats}>
+            <View style={styles.statItem}>
+              <Gavel size={16} color="#6B7280" />
+              <Text style={styles.statText}>47 bids</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Users size={16} color="#6B7280" />
+              <Text style={styles.statText}>234 watching</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Eye size={16} color="#6B7280" />
+              <Text style={styles.statText}>1.2k views</Text>
+            </View>
+          </View>
+
           <TouchableOpacity
-            style={[styles.bidButton, bidLoading && styles.bidButtonDisabled]}
+            style={styles.bidButton}
             onPress={handleBidPress}
-            disabled={bidLoading}
           >
-            {bidLoading ? (
-              <LoadingSpinner size={20} color="#ffffff" />
-            ) : (
+            <LinearGradient
+              colors={['#FF7F00', '#FF6B35']}
+              style={styles.bidButtonGradient}
+            >
+              <Gavel size={20} color="#FFFFFF" />
               <Text style={styles.bidButtonText}>Place Bid</Text>
-            )}
+            </LinearGradient>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.watchlistButton}>
+          <TouchableOpacity 
+            style={styles.watchlistButton}
+            onPress={() => router.push('/watchlist')}
+          >
             <Eye size={16} color="#1e40af" />
             <Text style={styles.watchlistButtonText}>Add to Watchlist</Text>
           </TouchableOpacity>
-        </View>
+        </AnimatedCard>
+
+        {/* Related Actions */}
+        <AnimatedCard delay={300} style={styles.relatedActions}>
+          <Text style={styles.relatedTitle}>Quick Actions</Text>
+          <View style={styles.actionsList}>
+            <TouchableOpacity 
+              style={styles.relatedAction}
+              onPress={() => router.push('/bid-history')}
+            >
+              <Text style={styles.relatedActionText}>View Bid History</Text>
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.relatedAction}
+              onPress={() => router.push('/(tabs)/search')}
+            >
+              <Text style={styles.relatedActionText}>Find Similar Items</Text>
+            </TouchableOpacity>
+          </View>
+        </AnimatedCard>
+
+        <View style={styles.bottomPadding} />
       </ScrollView>
 
       {/* Bid Modal */}
@@ -243,11 +307,11 @@ export default function ProductDetailScreen() {
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.confirmBidButton, bidLoading && styles.confirmBidButtonDisabled]}
+                style={[styles.confirmBidButton, isLoading && styles.confirmBidButtonDisabled]}
                 onPress={handlePlaceBid}
-                disabled={bidLoading}
+                disabled={isLoading}
               >
-                {bidLoading ? (
+                {isLoading ? (
                   <LoadingSpinner size={16} color="#ffffff" />
                 ) : (
                   <Text style={styles.confirmBidButtonText}>Place Bid</Text>
@@ -266,22 +330,17 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#ffffff',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: '#6b7280',
-    marginTop: 16,
-  },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
+  },
+  errorText: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: '#ef4444',
+    marginBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -332,10 +391,27 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginLeft: 4,
   },
+  rarityBadge: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  rarityText: {
+    fontSize: 10,
+    fontFamily: 'Inter-Bold',
+    color: '#FFFFFF',
+    marginLeft: 4,
+  },
   productInfo: {
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
+    backgroundColor: '#ffffff',
+    margin: 16,
+    borderRadius: 16,
   },
   productTitle: {
     fontSize: 24,
@@ -354,12 +430,29 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#374151',
     lineHeight: 24,
+    marginBottom: 16,
+  },
+  authenticityBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    alignSelf: 'flex-start',
+  },
+  authenticityText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#16A34A',
+    marginLeft: 6,
   },
   biddingSection: {
     padding: 16,
-    backgroundColor: '#f9fafb',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    backgroundColor: '#ffffff',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
   },
   currentBidContainer: {
     alignItems: 'center',
@@ -384,38 +477,85 @@ const styles = StyleSheet.create({
   },
   countdown: {
     marginBottom: 20,
+    alignSelf: 'center',
+  },
+  auctionStats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginBottom: 20,
+    paddingVertical: 16,
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+  },
+  statItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#6b7280',
+    marginLeft: 6,
   },
   bidButton: {
-    backgroundColor: '#1e40af',
-    paddingVertical: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    overflow: 'hidden',
     marginBottom: 12,
-    shadowColor: '#1e40af',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
-  bidButtonDisabled: {
-    backgroundColor: '#9ca3af',
+  bidButtonGradient: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
   },
   bidButtonText: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: '#ffffff',
+    marginLeft: 8,
   },
   watchlistButton: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: '#1e40af',
+    borderRadius: 12,
   },
   watchlistButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
     color: '#1e40af',
     marginLeft: 8,
+  },
+  relatedActions: {
+    padding: 16,
+    backgroundColor: '#ffffff',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 16,
+  },
+  relatedTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
+    marginBottom: 12,
+  },
+  actionsList: {
+    gap: 8,
+  },
+  relatedAction: {
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  relatedActionText: {
+    fontSize: 14,
+    fontFamily: 'Inter-SemiBold',
+    color: '#374151',
   },
   backButton: {
     backgroundColor: '#1e40af',
@@ -505,11 +645,6 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#1e40af',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 8,
   },
   confirmBidButtonDisabled: {
     backgroundColor: '#9ca3af',
@@ -518,5 +653,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: '#ffffff',
+  },
+  bottomPadding: {
+    height: 100,
   },
 });

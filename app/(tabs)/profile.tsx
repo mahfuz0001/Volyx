@@ -9,7 +9,28 @@ import {
   Switch,
   Image,
 } from 'react-native';
-import { User, Settings, Bell, CircleHelp as HelpCircle, LogOut, Trophy, Gavel, Coins, Calendar, ChevronRight } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
+import { 
+  User, 
+  Settings, 
+  Bell, 
+  HelpCircle, 
+  LogOut, 
+  Trophy, 
+  Gavel, 
+  Coins, 
+  Calendar, 
+  ChevronRight,
+  Eye,
+  Heart,
+  History,
+  FileText,
+  UserCircle,
+  Shield
+} from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import AnimatedCard from '@/components/AnimatedCard';
+import ConnectsBalance from '@/components/ConnectsBalance';
 import {
   mockUserData,
   mockWonItems,
@@ -17,6 +38,7 @@ import {
 } from '@/data/mockData';
 
 export default function ProfileScreen() {
+  const router = useRouter();
   const [notifications, setNotifications] = useState({
     outbid: true,
     ending: true,
@@ -38,25 +60,95 @@ export default function ProfileScreen() {
     return { text: `${sign}${Math.abs(amount).toLocaleString()}`, color };
   };
 
+  const handleLogout = () => {
+    // In a real app, this would clear auth state
+    router.replace('/auth');
+  };
+
+  const MenuSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <AnimatedCard style={styles.section}>
+      <Text style={styles.sectionTitle}>{title}</Text>
+      {children}
+    </AnimatedCard>
+  );
+
+  const MenuItem = ({ 
+    icon: IconComponent, 
+    title, 
+    subtitle, 
+    onPress, 
+    showChevron = true,
+    danger = false 
+  }: {
+    icon: any;
+    title: string;
+    subtitle?: string;
+    onPress: () => void;
+    showChevron?: boolean;
+    danger?: boolean;
+  }) => (
+    <TouchableOpacity 
+      style={styles.menuItem} 
+      onPress={onPress}
+      activeOpacity={0.7}
+    >
+      <View style={[styles.menuIcon, danger && styles.menuIconDanger]}>
+        <IconComponent size={20} color={danger ? '#EF4444' : '#6B7280'} />
+      </View>
+      <View style={styles.menuContent}>
+        <Text style={[styles.menuTitle, danger && styles.menuTitleDanger]}>
+          {title}
+        </Text>
+        {subtitle && (
+          <Text style={styles.menuSubtitle}>{subtitle}</Text>
+        )}
+      </View>
+      {showChevron && (
+        <ChevronRight size={16} color="#9CA3AF" />
+      )}
+    </TouchableOpacity>
+  );
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Profile Header */}
-        <View style={styles.profileHeader}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <User size={32} color="#1e40af" />
+        <AnimatedCard delay={100} style={styles.profileHeader}>
+          <LinearGradient
+            colors={['#FF7F00', '#FF6B35']}
+            style={styles.profileGradient}
+          >
+            <View style={styles.profileInfo}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <User size={32} color="#FFFFFF" />
+                </View>
+                <View style={styles.verifiedBadge}>
+                  <Shield size={12} color="#FFFFFF" fill="#16A34A" />
+                </View>
+              </View>
+              <View style={styles.userDetails}>
+                <Text style={styles.userName}>{mockUserData.name}</Text>
+                <Text style={styles.userEmail}>{mockUserData.email}</Text>
+                <View style={styles.joinDate}>
+                  <Calendar size={14} color="rgba(255, 255, 255, 0.8)" />
+                  <Text style={styles.joinDateText}>
+                    Member since {formatDate(mockUserData.joinedDate)}
+                  </Text>
+                </View>
+              </View>
             </View>
-          </View>
-          <Text style={styles.userName}>{mockUserData.name}</Text>
-          <Text style={styles.userEmail}>{mockUserData.email}</Text>
-          <Text style={styles.joinDate}>
-            Member since {formatDate(mockUserData.joinedDate)}
-          </Text>
-        </View>
+            
+            <ConnectsBalance
+              balance={mockUserData.connectsBalance}
+              onPress={() => router.push('/get-connects')}
+              showAddButton={true}
+            />
+          </LinearGradient>
+        </AnimatedCard>
 
         {/* Stats */}
-        <View style={styles.statsContainer}>
+        <AnimatedCard delay={200} style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Coins size={20} color="#f59e0b" />
             <Text style={styles.statNumber}>
@@ -74,11 +166,56 @@ export default function ProfileScreen() {
             <Text style={styles.statNumber}>{mockUserData.itemsWon}</Text>
             <Text style={styles.statLabel}>Items Won</Text>
           </View>
-        </View>
+        </AnimatedCard>
+
+        {/* Account Management */}
+        <MenuSection title="Account">
+          <MenuItem
+            icon={UserCircle}
+            title="Edit Profile"
+            subtitle="Update your personal information"
+            onPress={() => router.push('/user-profile')}
+          />
+          <MenuItem
+            icon={Bell}
+            title="Notifications"
+            subtitle="Manage your notification preferences"
+            onPress={() => router.push('/notifications')}
+          />
+          <MenuItem
+            icon={Settings}
+            title="Settings"
+            subtitle="App preferences and privacy"
+            onPress={() => router.push('/settings')}
+          />
+        </MenuSection>
+
+        {/* Activity */}
+        <MenuSection title="My Activity">
+          <MenuItem
+            icon={History}
+            title="Bid History"
+            subtitle="View all your bidding activity"
+            onPress={() => router.push('/bid-history')}
+          />
+          <MenuItem
+            icon={Heart}
+            title="Watchlist"
+            subtitle="Items you're watching"
+            onPress={() => router.push('/watchlist')}
+          />
+          <MenuItem
+            icon={Eye}
+            title="Recently Viewed"
+            subtitle="Items you've looked at"
+            onPress={() => {
+              // Navigate to recently viewed items
+            }}
+          />
+        </MenuSection>
 
         {/* Won Items */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>My Won Items</Text>
+        <MenuSection title="My Won Items">
           {mockWonItems.length > 0 ? (
             <View style={styles.wonItemsList}>
               {mockWonItems.map((item) => (
@@ -107,133 +244,38 @@ export default function ProfileScreen() {
               <Text style={styles.emptyText}>No items won yet</Text>
             </View>
           )}
-        </View>
+        </MenuSection>
 
-        {/* Connects History */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Connects History</Text>
-          <View style={styles.transactionsList}>
-            {mockConnectsTransactions.slice(0, 5).map((transaction) => {
-              const amountData = formatTransactionAmount(
-                transaction.amount,
-                transaction.type
-              );
-              return (
-                <View key={transaction.id} style={styles.transaction}>
-                  <View style={styles.transactionInfo}>
-                    <Text style={styles.transactionDescription}>
-                      {transaction.description}
-                    </Text>
-                    <Text style={styles.transactionDate}>
-                      {formatDate(transaction.timestamp)}
-                    </Text>
-                  </View>
-                  <Text style={[styles.transactionAmount, { color: amountData.color }]}>
-                    {amountData.text}
-                  </Text>
-                </View>
-              );
-            })}
-            <TouchableOpacity style={styles.viewAllButton}>
-              <Text style={styles.viewAllText}>View All Transactions</Text>
-              <ChevronRight size={16} color="#1e40af" />
-            </TouchableOpacity>
-          </View>
-        </View>
+        {/* Support & Legal */}
+        <MenuSection title="Support & Legal">
+          <MenuItem
+            icon={HelpCircle}
+            title="Help & Support"
+            subtitle="Get help with your account"
+            onPress={() => router.push('/help-support')}
+          />
+          <MenuItem
+            icon={FileText}
+            title="Terms & Privacy"
+            subtitle="Legal documents and policies"
+            onPress={() => router.push('/terms-privacy')}
+          />
+        </MenuSection>
 
-        {/* Notification Settings */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Notification Settings</Text>
-          <View style={styles.settingsContainer}>
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Outbid Notifications</Text>
-                <Text style={styles.settingDescription}>
-                  Get notified when you're outbid
-                </Text>
-              </View>
-              <Switch
-                value={notifications.outbid}
-                onValueChange={(value) =>
-                  setNotifications({ ...notifications, outbid: value })
-                }
-                trackColor={{ false: '#f3f4f6', true: '#bfdbfe' }}
-                thumbColor={notifications.outbid ? '#1e40af' : '#9ca3af'}
-              />
-            </View>
+        {/* Logout */}
+        <MenuSection title="">
+          <MenuItem
+            icon={LogOut}
+            title="Logout"
+            subtitle="Sign out of your account"
+            onPress={handleLogout}
+            showChevron={false}
+            danger
+          />
+        </MenuSection>
 
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Auction Ending Soon</Text>
-                <Text style={styles.settingDescription}>
-                  Reminders for auctions ending soon
-                </Text>
-              </View>
-              <Switch
-                value={notifications.ending}
-                onValueChange={(value) =>
-                  setNotifications({ ...notifications, ending: value })
-                }
-                trackColor={{ false: '#f3f4f6', true: '#bfdbfe' }}
-                thumbColor={notifications.ending ? '#1e40af' : '#9ca3af'}
-              />
-            </View>
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>New Daily Auctions</Text>
-                <Text style={styles.settingDescription}>
-                  Discover new auctions each day
-                </Text>
-              </View>
-              <Switch
-                value={notifications.newAuctions}
-                onValueChange={(value) =>
-                  setNotifications({ ...notifications, newAuctions: value })
-                }
-                trackColor={{ false: '#f3f4f6', true: '#bfdbfe' }}
-                thumbColor={notifications.newAuctions ? '#1e40af' : '#9ca3af'}
-              />
-            </View>
-
-            <View style={styles.settingItem}>
-              <View style={styles.settingInfo}>
-                <Text style={styles.settingLabel}>Connects Activity</Text>
-                <Text style={styles.settingDescription}>
-                  Notifications for Connects earned/spent
-                </Text>
-              </View>
-              <Switch
-                value={notifications.connects}
-                onValueChange={(value) =>
-                  setNotifications({ ...notifications, connects: value })
-                }
-                trackColor={{ false: '#f3f4f6', true: '#bfdbfe' }}
-                thumbColor={notifications.connects ? '#1e40af' : '#9ca3af'}
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* Menu Items */}
-        <View style={styles.section}>
-          <TouchableOpacity style={styles.menuItem}>
-            <HelpCircle size={20} color="#6b7280" />
-            <Text style={styles.menuItemText}>Help & Support</Text>
-            <ChevronRight size={16} color="#9ca3af" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={styles.menuItem}>
-            <Settings size={20} color="#6b7280" />
-            <Text style={styles.menuItemText}>App Settings</Text>
-            <ChevronRight size={16} color="#9ca3af" />
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.menuItem, styles.logoutItem]}>
-            <LogOut size={20} color="#ef4444" />
-            <Text style={[styles.menuItemText, styles.logoutText]}>Log Out</Text>
-          </TouchableOpacity>
-        </View>
+        {/* Bottom Padding */}
+        <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -245,59 +287,84 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9fafb',
   },
   profileHeader: {
-    backgroundColor: '#ffffff',
+    margin: 20,
+    marginBottom: 16,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  profileGradient: {
+    padding: 24,
+  },
+  profileInfo: {
+    flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 32,
-    paddingHorizontal: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
+    marginBottom: 20,
   },
   avatarContainer: {
-    marginBottom: 16,
+    position: 'relative',
+    marginRight: 16,
   },
   avatar: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#e0e7ff',
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 3,
+    borderColor: '#FFFFFF',
+  },
+  verifiedBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: '#16A34A',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
+  },
+  userDetails: {
+    flex: 1,
   },
   userName: {
     fontSize: 24,
     fontFamily: 'Inter-Bold',
-    color: '#111827',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   userEmail: {
     fontSize: 16,
     fontFamily: 'Inter-Regular',
-    color: '#6b7280',
+    color: 'rgba(255, 255, 255, 0.9)',
     marginBottom: 8,
   },
   joinDate: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  joinDateText: {
     fontSize: 14,
     fontFamily: 'Inter-Regular',
-    color: '#9ca3af',
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginLeft: 6,
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    marginHorizontal: 20,
+    marginBottom: 16,
+    padding: 16,
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
     alignItems: 'center',
-    marginHorizontal: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    paddingVertical: 16,
   },
   statNumber: {
     fontSize: 20,
@@ -314,15 +381,53 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: '#ffffff',
-    marginVertical: 8,
+    marginHorizontal: 20,
+    marginBottom: 16,
     paddingVertical: 20,
     paddingHorizontal: 16,
+    borderRadius: 16,
   },
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: '#111827',
     marginBottom: 16,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f3f4f6',
+  },
+  menuIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#f3f4f6',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  menuIconDanger: {
+    backgroundColor: '#fef2f2',
+  },
+  menuContent: {
+    flex: 1,
+  },
+  menuTitle: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  menuTitleDanger: {
+    color: '#EF4444',
+  },
+  menuSubtitle: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#6b7280',
   },
   wonItemsList: {
     gap: 12,
@@ -359,34 +464,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#6b7280',
   },
-  transactionsList: {
-    gap: 12,
-  },
-  transaction: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  transactionInfo: {
-    flex: 1,
-  },
-  transactionDescription: {
-    fontSize: 14,
-    fontFamily: 'Inter-Medium',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  transactionDate: {
-    fontSize: 12,
-    fontFamily: 'Inter-Regular',
-    color: '#6b7280',
-  },
-  transactionAmount: {
-    fontSize: 14,
-    fontFamily: 'Inter-SemiBold',
-    marginLeft: 16,
-  },
   viewAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -410,47 +487,7 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 8,
   },
-  settingsContainer: {
-    gap: 16,
-  },
-  settingItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  settingInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  settingLabel: {
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: '#111827',
-    marginBottom: 2,
-  },
-  settingDescription: {
-    fontSize: 14,
-    fontFamily: 'Inter-Regular',
-    color: '#6b7280',
-  },
-  menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f3f4f6',
-  },
-  menuItemText: {
-    fontSize: 16,
-    fontFamily: 'Inter-Medium',
-    color: '#111827',
-    flex: 1,
-    marginLeft: 12,
-  },
-  logoutItem: {
-    borderBottomWidth: 0,
-  },
-  logoutText: {
-    color: '#ef4444',
+  bottomPadding: {
+    height: 120,
   },
 });
