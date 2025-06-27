@@ -12,28 +12,7 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import {
-  ChevronLeft,
-  Edit,
-  Camera,
-  Mail,
-  Phone,
-  MapPin,
-  Calendar,
-  Shield,
-  Award,
-  TrendingUp,
-  Eye,
-  Heart,
-  Settings,
-  Bell,
-  CreditCard,
-  HelpCircle,
-  LogOut,
-  User,
-  Save,
-  X,
-} from 'lucide-react-native';
+import { ChevronLeft, LocationEdit as Edit, Camera, Mail, Phone, MapPin, Calendar, Shield, Award, TrendingUp, Eye, Heart, Settings, Bell, CreditCard, Circle as HelpCircle, LogOut, User, Save, X } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedCard from '@/components/AnimatedCard';
 import ConnectsBalance from '@/components/ConnectsBalance';
