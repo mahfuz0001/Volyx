@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Search, Heart, User, ShoppingBag } from 'lucide-react-native';
+import { Chrome as Home, Search, Heart, User, ShoppingBag } from 'lucide-react-native';
 import { View, StyleSheet } from 'react-native';
 import { BlurView } from 'expo-blur';
 
