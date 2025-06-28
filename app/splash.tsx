@@ -2,9 +2,11 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated } from 'react-native';
 import { useRouter } from 'expo-router';
 import GradientBackground from '@/components/GradientBackground';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function SplashScreen() {
   const router = useRouter();
+  const { user, isLoading } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.5)).current;
   const slideAnim = useRef(new Animated.Value(50)).current;
@@ -35,11 +37,21 @@ export default function SplashScreen() {
     animateSequence();
     
     const timer = setTimeout(() => {
-      router.replace('/onboarding');
+      if (!isLoading) {
+        if (user) {
+          if (user.isAdmin) {
+            router.replace('/admin');
+          } else {
+            router.replace('/(tabs)');
+          }
+        } else {
+          router.replace('/onboarding');
+        }
+      }
     }, 3000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [isLoading, user]);
 
   return (
     <GradientBackground colors={['#1e40af', '#3b82f6', '#60a5fa']}>

@@ -7,6 +7,13 @@ export const users = pgTable('users', {
   name: text('name').notNull(),
   connectsBalance: integer('connects_balance').default(100),
   isAdmin: boolean('is_admin').default(false),
+  clerkId: text('clerk_id').notNull().unique(),
+  imageUrl: text('image_url'),
+  phone: text('phone'),
+  location: text('location'),
+  bio: text('bio'),
+  trustScore: integer('trust_score').default(100),
+  isVerified: boolean('is_verified').default(false),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });

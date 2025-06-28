@@ -8,104 +8,107 @@ import {
 } from 'lucide-react-native';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { BlurView } from 'expo-blur';
+import AuthGuard from '@/components/AuthGuard';
 
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarLabel: () => null,
-        tabBarStyle: {
-          position: 'absolute',
-          bottom: 40,
-          left: 0,
-          right: 0,
-          height: 60,
-          backgroundColor: 'transparent',
-          borderTopWidth: 0,
-          elevation: 0,
-          shadowOpacity: 0,
-          paddingHorizontal: 20,
-        },
-        tabBarBackground: () => (
-          <BlurView intensity={100} style={styles.floatingNavBarBackground} />
-        ),
-        tabBarActiveTintColor: '#FF7F00',
-        tabBarInactiveTintColor: '#8E8E93',
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontFamily: 'Inter-SemiBold',
-          marginTop: 4,
-          marginBottom: 8,
-        },
-        tabBarIconStyle: {
-          marginTop: 8,
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'Discover',
-          tabBarIcon: ({ size, color }) => (
-            <HomeIconLucide size={size} color={color} strokeWidth={2.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: 'Search',
-          tabBarIcon: ({ size, color }) => (
-            <Search size={size} color={color} strokeWidth={2.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="auctions"
-        options={{
-          title: 'My Bids',
+    <AuthGuard>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
           tabBarLabel: () => null,
-          tabBarIcon: ({ focused }) => (
-            <View
-              style={[
-                styles.centralButtonContainer,
-                { backgroundColor: focused ? '#FF7F00' : '#4a90e2' },
-              ]}
-            >
-              <ShoppingBag size={28} color="#FFFFFF" strokeWidth={2.5} />
-            </View>
-          ),
-          tabBarIconStyle: {
-            marginTop: -30,
+          tabBarStyle: {
+            position: 'absolute',
+            bottom: 40,
+            left: 0,
+            right: 0,
+            height: 60,
+            backgroundColor: 'transparent',
+            borderTopWidth: 0,
+            elevation: 0,
+            shadowOpacity: 0,
+            paddingHorizontal: 20,
           },
-          tabBarButton: (props) => (
-            <TouchableOpacity
-              {...(props as any)}
-              style={styles.centralButtonWrapper}
-            />
+          tabBarBackground: () => (
+            <BlurView intensity={100} style={styles.floatingNavBarBackground} />
           ),
+          tabBarActiveTintColor: '#FF7F00',
+          tabBarInactiveTintColor: '#8E8E93',
+          tabBarLabelStyle: {
+            fontSize: 11,
+            fontFamily: 'Inter-SemiBold',
+            marginTop: 4,
+            marginBottom: 8,
+          },
+          tabBarIconStyle: {
+            marginTop: 8,
+          },
         }}
-      />
-      <Tabs.Screen
-        name="favorites"
-        options={{
-          title: 'Favorites',
-          tabBarIcon: ({ size, color }) => (
-            <Heart size={size} color={color} strokeWidth={2.5} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Profile',
-          tabBarIcon: ({ size, color }) => (
-            <User size={size} color={color} strokeWidth={2.5} />
-          ),
-        }}
-      />
-    </Tabs>
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: 'Discover',
+            tabBarIcon: ({ size, color }) => (
+              <HomeIconLucide size={size} color={color} strokeWidth={2.5} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="search"
+          options={{
+            title: 'Search',
+            tabBarIcon: ({ size, color }) => (
+              <Search size={size} color={color} strokeWidth={2.5} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="auctions"
+          options={{
+            title: 'My Bids',
+            tabBarLabel: () => null,
+            tabBarIcon: ({ focused }) => (
+              <View
+                style={[
+                  styles.centralButtonContainer,
+                  { backgroundColor: focused ? '#FF7F00' : '#4a90e2' },
+                ]}
+              >
+                <ShoppingBag size={28} color="#FFFFFF" strokeWidth={2.5} />
+              </View>
+            ),
+            tabBarIconStyle: {
+              marginTop: -30,
+            },
+            tabBarButton: (props) => (
+              <TouchableOpacity
+                {...(props as any)}
+                style={styles.centralButtonWrapper}
+              />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="favorites"
+          options={{
+            title: 'Favorites',
+            tabBarIcon: ({ size, color }) => (
+              <Heart size={size} color={color} strokeWidth={2.5} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: 'Profile',
+            tabBarIcon: ({ size, color }) => (
+              <User size={size} color={color} strokeWidth={2.5} />
+            ),
+          }}
+        />
+      </Tabs>
+    </AuthGuard>
   );
 }
 
