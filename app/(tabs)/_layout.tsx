@@ -1,11 +1,5 @@
 import { Tabs } from 'expo-router';
-import {
-  Home as HomeIconLucide,
-  Search,
-  Heart,
-  User,
-  ShoppingBag,
-} from 'lucide-react-native';
+import { Chrome as HomeIconLucide, Search, Heart, User, ShoppingBag } from 'lucide-react-native';
 import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { BlurView } from 'expo-blur';
 import AuthGuard from '@/components/AuthGuard';
