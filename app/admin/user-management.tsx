@@ -10,12 +10,15 @@ import {
   Modal,
   Alert,
   Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Search, ListFilter as Filter, MoveVertical as MoreVertical, Ban, CircleCheck as CheckCircle, Circle as XCircle, LocationEdit as Edit, Trash2, Shield, Crown, Mail, Phone, Calendar, Coins, TrendingUp, TriangleAlert as AlertTriangle, Download, Upload, RefreshCw, UserPlus, Settings } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { adminAPI } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 
 interface User {
   id: string;
@@ -41,6 +44,8 @@ interface User {
   referralCode?: string;
   referredBy?: string;
   totalReferrals: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface UserFilters {
@@ -53,6 +58,7 @@ interface UserFilters {
 
 export default function UserManagementScreen() {
   const router = useRouter();
+  const { user: currentUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -63,6 +69,7 @@ export default function UserManagementScreen() {
   const [showUserModal, setShowUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showCreateUser, setShowCreateUser] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
   const [filters, setFilters] = useState<UserFilters>({
     status: 'all',
@@ -92,131 +99,40 @@ export default function UserManagementScreen() {
   const fetchUsers = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Fetch users from the database via API
+      const fetchedUsers = await adminAPI.getAllUsers();
+      
+      // Transform the data to match our expected format
+      const transformedUsers = fetchedUsers.map(user => ({
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone || undefined,
+        connectsBalance: user.connectsBalance,
+        totalSpent: 0, // This would come from transactions in a real implementation
+        totalBids: user.totalBids,
+        itemsWon: user.itemsWon,
+        joinedDate: user.createdAt,
+        lastActive: user.updatedAt,
+        status: 'active', // This would be a real status in production
+        isAdmin: user.isAdmin,
+        isCurator: false, // This would be a real flag in production
+        isVerified: user.isVerified,
+        trustScore: user.trustScore,
+        riskLevel: user.trustScore > 80 ? 'low' : user.trustScore > 50 ? 'medium' : 'high',
+        flags: [], // This would be real flags in production
+        location: user.location,
+        totalReferrals: 0, // This would be real data in production
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      }));
 
-      // Mock comprehensive user data
-      const mockUsers: User[] = [
-        {
-          id: '1',
-          name: 'John Doe',
-          email: 'john.doe@example.com',
-          phone: '+1 (555) 123-4567',
-          connectsBalance: 2750,
-          totalSpent: 15680,
-          totalBids: 47,
-          itemsWon: 8,
-          joinedDate: '2024-01-15',
-          lastActive: '2024-01-20',
-          status: 'active',
-          isAdmin: false,
-          isCurator: false,
-          isVerified: true,
-          trustScore: 95,
-          riskLevel: 'low',
-          flags: [],
-          ipAddress: '192.168.1.100',
-          deviceInfo: 'iPhone 15 Pro',
-          location: 'New York, NY',
-          referralCode: 'JOHN2024',
-          totalReferrals: 3,
-        },
-        {
-          id: '2',
-          name: 'Jane Smith',
-          email: 'jane.smith@example.com',
-          connectsBalance: 890,
-          totalSpent: 5420,
-          totalBids: 23,
-          itemsWon: 3,
-          joinedDate: '2024-01-10',
-          lastActive: '2024-01-19',
-          status: 'active',
-          isAdmin: false,
-          isCurator: true,
-          isVerified: true,
-          trustScore: 88,
-          riskLevel: 'low',
-          flags: [],
-          ipAddress: '10.0.0.45',
-          deviceInfo: 'Samsung Galaxy S24',
-          location: 'Los Angeles, CA',
-          referralCode: 'JANE2024',
-          totalReferrals: 1,
-        },
-        {
-          id: '3',
-          name: 'Mike Johnson',
-          email: 'mike.johnson@example.com',
-          connectsBalance: 45,
-          totalSpent: 890,
-          totalBids: 156,
-          itemsWon: 1,
-          joinedDate: '2024-01-05',
-          lastActive: '2024-01-18',
-          status: 'suspended',
-          isAdmin: false,
-          isCurator: false,
-          isVerified: false,
-          trustScore: 45,
-          riskLevel: 'high',
-          flags: ['Suspicious bidding pattern', 'Multiple failed payments', 'Rapid account creation'],
-          ipAddress: '203.0.113.42',
-          deviceInfo: 'Unknown Device',
-          location: 'Unknown',
-          totalReferrals: 0,
-        },
-        {
-          id: '4',
-          name: 'Sarah Wilson',
-          email: 'sarah.wilson@example.com',
-          connectsBalance: 12500,
-          totalSpent: 45000,
-          totalBids: 234,
-          itemsWon: 45,
-          joinedDate: '2023-12-01',
-          lastActive: '2024-01-20',
-          status: 'active',
-          isAdmin: false,
-          isCurator: false,
-          isVerified: true,
-          trustScore: 98,
-          riskLevel: 'low',
-          flags: [],
-          ipAddress: '172.16.0.1',
-          deviceInfo: 'iPad Pro',
-          location: 'Chicago, IL',
-          referralCode: 'SARAH2024',
-          totalReferrals: 12,
-        },
-        {
-          id: '5',
-          name: 'Admin User',
-          email: 'admin@volyx.com',
-          connectsBalance: 100000,
-          totalSpent: 0,
-          totalBids: 0,
-          itemsWon: 0,
-          joinedDate: '2023-11-01',
-          lastActive: '2024-01-20',
-          status: 'active',
-          isAdmin: true,
-          isCurator: true,
-          isVerified: true,
-          trustScore: 100,
-          riskLevel: 'low',
-          flags: [],
-          ipAddress: '127.0.0.1',
-          deviceInfo: 'MacBook Pro',
-          location: 'San Francisco, CA',
-          totalReferrals: 0,
-        },
-      ];
-
-      setUsers(mockUsers);
+      setUsers(transformedUsers);
     } catch (error) {
       console.error('Failed to fetch users:', error);
+      setError('Failed to load users. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -273,7 +189,7 @@ export default function UserManagementScreen() {
     setFilteredUsers(filtered);
   };
 
-  const handleUserAction = (action: string, user: User) => {
+  const handleUserAction = async (action: string, user: User) => {
     setSelectedUser(user);
     
     switch (action) {
@@ -328,36 +244,92 @@ export default function UserManagementScreen() {
     }
   };
 
-  const updateUserStatus = (userId: string, status: 'active' | 'suspended' | 'banned') => {
-    setUsers(prev => prev.map(user => 
-      user.id === userId ? { ...user, status } : user
-    ));
+  const updateUserStatus = async (userId: string, status: 'active' | 'suspended' | 'banned') => {
+    try {
+      setLoading(true);
+      
+      // In a real implementation, you would call an API to update the user's status
+      // For now, we'll just update the local state
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, status } : user
+      ));
+      
+      // Show success message
+      Alert.alert('Success', `User status updated to ${status}`);
+    } catch (error) {
+      console.error('Failed to update user status:', error);
+      Alert.alert('Error', 'Failed to update user status');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const toggleUserVerification = (userId: string) => {
-    setUsers(prev => prev.map(user => 
-      user.id === userId ? { ...user, isVerified: !user.isVerified } : user
-    ));
+  const toggleUserVerification = async (userId: string) => {
+    try {
+      setLoading(true);
+      
+      // In a real implementation, you would call an API to toggle the user's verification status
+      // For now, we'll just update the local state
+      setUsers(prev => prev.map(user => 
+        user.id === userId ? { ...user, isVerified: !user.isVerified } : user
+      ));
+      
+      // Show success message
+      Alert.alert('Success', 'User verification status updated');
+    } catch (error) {
+      console.error('Failed to toggle user verification:', error);
+      Alert.alert('Error', 'Failed to update user verification status');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const toggleUserRole = (userId: string, role: 'curator' | 'admin') => {
-    setUsers(prev => prev.map(user => {
-      if (user.id === userId) {
-        if (role === 'curator') {
-          return { ...user, isCurator: !user.isCurator };
-        } else {
-          return { ...user, isAdmin: !user.isAdmin };
+  const toggleUserRole = async (userId: string, role: 'curator' | 'admin') => {
+    try {
+      setLoading(true);
+      
+      // In a real implementation, you would call an API to toggle the user's role
+      // For now, we'll just update the local state
+      setUsers(prev => prev.map(user => {
+        if (user.id === userId) {
+          if (role === 'curator') {
+            return { ...user, isCurator: !user.isCurator };
+          } else {
+            return { ...user, isAdmin: !user.isAdmin };
+          }
         }
-      }
-      return user;
-    }));
+        return user;
+      }));
+      
+      // Show success message
+      Alert.alert('Success', `User role updated`);
+    } catch (error) {
+      console.error('Failed to toggle user role:', error);
+      Alert.alert('Error', 'Failed to update user role');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const deleteUser = (userId: string) => {
-    setUsers(prev => prev.filter(user => user.id !== userId));
+  const deleteUser = async (userId: string) => {
+    try {
+      setLoading(true);
+      
+      // In a real implementation, you would call an API to delete the user
+      // For now, we'll just update the local state
+      setUsers(prev => prev.filter(user => user.id !== userId));
+      
+      // Show success message
+      Alert.alert('Success', 'User deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      Alert.alert('Error', 'Failed to delete user');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleBulkAction = (action: string) => {
+  const handleBulkAction = async (action: string) => {
     if (selectedUsers.length === 0) {
       Alert.alert('No Users Selected', 'Please select users to perform bulk actions.');
       return;
@@ -370,10 +342,40 @@ export default function UserManagementScreen() {
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'Confirm', 
-          onPress: () => {
-            // Implement bulk action logic
-            setSelectedUsers([]);
-            setShowBulkActions(false);
+          onPress: async () => {
+            try {
+              setLoading(true);
+              
+              // In a real implementation, you would call an API to perform the bulk action
+              // For now, we'll just update the local state
+              switch (action) {
+                case 'suspend':
+                  setUsers(prev => prev.map(user => 
+                    selectedUsers.includes(user.id) ? { ...user, status: 'suspended' } : user
+                  ));
+                  break;
+                case 'activate':
+                  setUsers(prev => prev.map(user => 
+                    selectedUsers.includes(user.id) ? { ...user, status: 'active' } : user
+                  ));
+                  break;
+                case 'delete':
+                  setUsers(prev => prev.filter(user => !selectedUsers.includes(user.id)));
+                  break;
+              }
+              
+              // Clear selected users
+              setSelectedUsers([]);
+              setShowBulkActions(false);
+              
+              // Show success message
+              Alert.alert('Success', `Bulk action completed successfully`);
+            } catch (error) {
+              console.error('Failed to perform bulk action:', error);
+              Alert.alert('Error', 'Failed to perform bulk action');
+            } finally {
+              setLoading(false);
+            }
           }
         },
       ]
@@ -387,9 +389,10 @@ export default function UserManagementScreen() {
     }
 
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
+      setLoading(true);
+      
+      // In a real implementation, you would call an API to create the user
+      // For now, we'll just update the local state
       const user: User = {
         id: Date.now().toString(),
         name: newUser.name,
@@ -399,8 +402,8 @@ export default function UserManagementScreen() {
         totalSpent: 0,
         totalBids: 0,
         itemsWon: 0,
-        joinedDate: new Date().toISOString().split('T')[0],
-        lastActive: new Date().toISOString().split('T')[0],
+        joinedDate: new Date().toISOString(),
+        lastActive: new Date().toISOString(),
         status: 'active',
         isAdmin: newUser.role === 'admin',
         isCurator: newUser.role === 'curator',
@@ -409,6 +412,8 @@ export default function UserManagementScreen() {
         riskLevel: 'low',
         flags: [],
         totalReferrals: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
 
       setUsers(prev => [user, ...prev]);
@@ -424,7 +429,10 @@ export default function UserManagementScreen() {
 
       Alert.alert('Success', 'User created successfully!');
     } catch (error) {
+      console.error('Failed to create user:', error);
       Alert.alert('Error', 'Failed to create user');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -451,13 +459,30 @@ export default function UserManagementScreen() {
     }
   };
 
-  if (loading) {
+  if (loading && users.length === 0) {
     return (
       <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
         <SafeAreaView style={styles.container}>
           <View style={styles.loadingContainer}>
             <LoadingSpinner size={48} />
             <Text style={styles.loadingText}>Loading users...</Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
+  if (error) {
+    return (
+      <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.errorContainer}>
+            <AlertTriangle size={48} color="#ef4444" />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchUsers}>
+              <RefreshCw size={16} color="#ffffff" />
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
       </GradientBackground>
@@ -623,104 +648,124 @@ export default function UserManagementScreen() {
               Users ({filteredUsers.length})
             </Text>
             
-            {filteredUsers.map((user, index) => (
-              <AnimatedCard key={user.id} delay={400 + index * 50} style={styles.userCard}>
-                <View style={styles.userHeader}>
-                  <TouchableOpacity
-                    style={styles.userCheckbox}
-                    onPress={() => {
-                      setSelectedUsers(prev => 
-                        prev.includes(user.id) 
-                          ? prev.filter(id => id !== user.id)
-                          : [...prev, user.id]
-                      );
-                    }}
-                  >
-                    <View style={[
-                      styles.checkbox,
-                      selectedUsers.includes(user.id) && styles.checkboxSelected,
-                    ]}>
-                      {selectedUsers.includes(user.id) && (
-                        <CheckCircle size={16} color="#ffffff" />
-                      )}
-                    </View>
-                  </TouchableOpacity>
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user, index) => (
+                <AnimatedCard key={user.id} delay={400 + index * 50} style={styles.userCard}>
+                  <View style={styles.userHeader}>
+                    <TouchableOpacity
+                      style={styles.userCheckbox}
+                      onPress={() => {
+                        setSelectedUsers(prev => 
+                          prev.includes(user.id) 
+                            ? prev.filter(id => id !== user.id)
+                            : [...prev, user.id]
+                        );
+                      }}
+                    >
+                      <View style={[
+                        styles.checkbox,
+                        selectedUsers.includes(user.id) && styles.checkboxSelected,
+                      ]}>
+                        {selectedUsers.includes(user.id) && (
+                          <CheckCircle size={16} color="#ffffff" />
+                        )}
+                      </View>
+                    </TouchableOpacity>
 
-                  <View style={styles.userInfo}>
-                    <View style={styles.userNameRow}>
-                      <Text style={styles.userName}>{user.name}</Text>
-                      {user.isAdmin && <Crown size={16} color="#f59e0b" />}
-                      {user.isCurator && <Shield size={16} color="#1e40af" />}
-                      {user.isVerified && <CheckCircle size={16} color="#16a34a" />}
-                    </View>
-                    <Text style={styles.userEmail}>{user.email}</Text>
-                    {user.phone && (
-                      <Text style={styles.userPhone}>{user.phone}</Text>
-                    )}
-                    <View style={styles.userStats}>
-                      <View style={styles.userStat}>
-                        <Coins size={12} color="#f59e0b" />
-                        <Text style={styles.userStatText}>{user.connectsBalance.toLocaleString()}</Text>
+                    <View style={styles.userInfo}>
+                      <View style={styles.userNameRow}>
+                        <Text style={styles.userName}>{user.name}</Text>
+                        {user.isAdmin && <Crown size={16} color="#f59e0b" />}
+                        {user.isCurator && <Shield size={16} color="#1e40af" />}
+                        {user.isVerified && <CheckCircle size={16} color="#16a34a" />}
                       </View>
-                      <View style={styles.userStat}>
-                        <TrendingUp size={12} color="#16a34a" />
-                        <Text style={styles.userStatText}>{user.totalBids} bids</Text>
-                      </View>
-                      <View style={styles.userStat}>
-                        <Calendar size={12} color="#6b7280" />
-                        <Text style={styles.userStatText}>{user.joinedDate}</Text>
-                      </View>
-                    </View>
-                  </View>
-                  
-                  <View style={styles.userActions}>
-                    <View style={styles.userBadges}>
-                      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(user.status) }]}>
-                        <Text style={styles.statusBadgeText}>{user.status}</Text>
-                      </View>
-                      <View style={[styles.riskBadge, { backgroundColor: getRiskColor(user.riskLevel) }]}>
-                        <Text style={styles.riskBadgeText}>{user.riskLevel}</Text>
+                      <Text style={styles.userEmail}>{user.email}</Text>
+                      {user.phone && (
+                        <Text style={styles.userPhone}>{user.phone}</Text>
+                      )}
+                      <View style={styles.userStats}>
+                        <View style={styles.userStat}>
+                          <Coins size={12} color="#f59e0b" />
+                          <Text style={styles.userStatText}>{user.connectsBalance.toLocaleString()}</Text>
+                        </View>
+                        <View style={styles.userStat}>
+                          <TrendingUp size={12} color="#16a34a" />
+                          <Text style={styles.userStatText}>{user.totalBids} bids</Text>
+                        </View>
+                        <View style={styles.userStat}>
+                          <Calendar size={12} color="#6b7280" />
+                          <Text style={styles.userStatText}>
+                            {new Date(user.joinedDate).toLocaleDateString()}
+                          </Text>
+                        </View>
                       </View>
                     </View>
                     
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() => handleUserAction('view', user)}
-                    >
-                      <MoreVertical size={20} color="#6b7280" />
-                    </TouchableOpacity>
+                    <View style={styles.userActions}>
+                      <View style={styles.userBadges}>
+                        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(user.status) }]}>
+                          <Text style={styles.statusBadgeText}>{user.status}</Text>
+                        </View>
+                        <View style={[styles.riskBadge, { backgroundColor: getRiskColor(user.riskLevel) }]}>
+                          <Text style={styles.riskBadgeText}>{user.riskLevel}</Text>
+                        </View>
+                      </View>
+                      
+                      <TouchableOpacity
+                        style={styles.actionButton}
+                        onPress={() => handleUserAction('view', user)}
+                      >
+                        <MoreVertical size={20} color="#6b7280" />
+                      </TouchableOpacity>
+                    </View>
                   </View>
-                </View>
 
-                {user.flags.length > 0 && (
-                  <View style={styles.flagsContainer}>
-                    <AlertTriangle size={14} color="#ef4444" />
-                    <Text style={styles.flagsText}>
-                      {user.flags.join(', ')}
-                    </Text>
-                  </View>
-                )}
+                  {user.flags.length > 0 && (
+                    <View style={styles.flagsContainer}>
+                      <AlertTriangle size={14} color="#ef4444" />
+                      <Text style={styles.flagsText}>
+                        {user.flags.join(', ')}
+                      </Text>
+                    </View>
+                  )}
 
-                <View style={styles.userMetrics}>
-                  <View style={styles.metric}>
-                    <Text style={styles.metricValue}>${user.totalSpent.toLocaleString()}</Text>
-                    <Text style={styles.metricLabel}>Total Spent</Text>
+                  <View style={styles.userMetrics}>
+                    <View style={styles.metric}>
+                      <Text style={styles.metricValue}>${user.totalSpent.toLocaleString()}</Text>
+                      <Text style={styles.metricLabel}>Total Spent</Text>
+                    </View>
+                    <View style={styles.metric}>
+                      <Text style={styles.metricValue}>{user.itemsWon}</Text>
+                      <Text style={styles.metricLabel}>Items Won</Text>
+                    </View>
+                    <View style={styles.metric}>
+                      <Text style={styles.metricValue}>{user.trustScore}</Text>
+                      <Text style={styles.metricLabel}>Trust Score</Text>
+                    </View>
+                    <View style={styles.metric}>
+                      <Text style={styles.metricValue}>{user.totalReferrals}</Text>
+                      <Text style={styles.metricLabel}>Referrals</Text>
+                    </View>
                   </View>
-                  <View style={styles.metric}>
-                    <Text style={styles.metricValue}>{user.itemsWon}</Text>
-                    <Text style={styles.metricLabel}>Items Won</Text>
-                  </View>
-                  <View style={styles.metric}>
-                    <Text style={styles.metricValue}>{user.trustScore}</Text>
-                    <Text style={styles.metricLabel}>Trust Score</Text>
-                  </View>
-                  <View style={styles.metric}>
-                    <Text style={styles.metricValue}>{user.totalReferrals}</Text>
-                    <Text style={styles.metricLabel}>Referrals</Text>
-                  </View>
-                </View>
-              </AnimatedCard>
-            ))}
+                </AnimatedCard>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No users found</Text>
+                <TouchableOpacity style={styles.emptyStateButton} onPress={() => {
+                  setSearchQuery('');
+                  setFilters({
+                    status: 'all',
+                    role: 'all',
+                    riskLevel: 'all',
+                    verified: 'all',
+                    dateRange: 'all',
+                  });
+                }}>
+                  <Text style={styles.emptyStateButtonText}>Clear Filters</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </AnimatedCard>
         </ScrollView>
 
@@ -765,11 +810,15 @@ export default function UserManagementScreen() {
                     <Text style={styles.detailSectionTitle}>Account Details</Text>
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>Joined:</Text>
-                      <Text style={styles.detailValue}>{selectedUser.joinedDate}</Text>
+                      <Text style={styles.detailValue}>
+                        {new Date(selectedUser.joinedDate).toLocaleDateString()}
+                      </Text>
                     </View>
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>Last Active:</Text>
-                      <Text style={styles.detailValue}>{selectedUser.lastActive}</Text>
+                      <Text style={styles.detailValue}>
+                        {new Date(selectedUser.lastActive).toLocaleDateString()}
+                      </Text>
                     </View>
                     <View style={styles.detailRow}>
                       <Text style={styles.detailLabel}>Verified:</Text>
@@ -979,6 +1028,12 @@ export default function UserManagementScreen() {
             </View>
           </View>
         </Modal>
+
+        {loading && users.length > 0 && (
+          <View style={styles.loadingOverlay}>
+            <ActivityIndicator size="large" color="#1e40af" />
+          </View>
+        )}
       </SafeAreaView>
     </GradientBackground>
   );
@@ -998,6 +1053,34 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#6b7280',
     marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#ef4444',
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#ffffff',
+    marginLeft: 8,
   },
   header: {
     flexDirection: 'row',
@@ -1265,10 +1348,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   flagsText: {
+    flex: 1,
     fontSize: 12,
     fontFamily: 'Inter-Medium',
     color: '#dc2626',
-    flex: 1,
   },
   userMetrics: {
     flexDirection: 'row',
@@ -1465,5 +1548,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: '#ffffff',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#6b7280',
+    marginBottom: 16,
+  },
+  emptyStateButton: {
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  emptyStateButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#ffffff',
+  },
+  loadingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

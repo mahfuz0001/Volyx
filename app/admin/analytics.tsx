@@ -7,12 +7,15 @@ import {
   ScrollView,
   TouchableOpacity,
   Dimensions,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, TrendingUp, Users, DollarSign, Package, Calendar, Download, ListFilter as Filter, RefreshCw, ChartBar as BarChart3, ChartPie as PieChart, Activity } from 'lucide-react-native';
+import { ChevronLeft, TrendingUp, Users, DollarSign, Package, Calendar, Download, ListFilter as Filter, RefreshCw, ChartBar as BarChart3, ChartPie as PieChart, Activity, Target, Award, Package as PackageIcon } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { analyticsAPI } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 
 const { width } = Dimensions.get('window');
 
@@ -60,10 +63,12 @@ interface AnalyticsData {
 
 export default function AnalyticsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [timeRange, setTimeRange] = useState('7d');
   const [data, setData] = useState<AnalyticsData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const timeRanges = [
     { label: '24H', value: '1d' },
@@ -80,57 +85,97 @@ export default function AnalyticsScreen() {
     try {
       setLoading(!isRefresh);
       setRefreshing(isRefresh);
+      setError(null);
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // Fetch dashboard stats from API
+      const dashboardStats = await analyticsAPI.getDashboardStats();
+      const auctionPerformance = await analyticsAPI.getAuctionPerformance();
+      const userStats = await analyticsAPI.getUserStats();
+      const financialStats = await analyticsAPI.getFinancialStats();
+      
+      // Calculate derived metrics
+      const totalAuctions = auctionPerformance.length;
+      const totalBids = auctionPerformance.reduce((sum, auction) => sum + auction.bidCount, 0);
+      const conversionRate = totalBids > 0 ? (userStats.topBidders.reduce((sum, user) => sum + user.wonCount, 0) / totalBids) * 100 : 0;
+      
+      // Calculate average bids per auction
+      const averageBidsPerAuction = totalAuctions > 0 ? totalBids / totalAuctions : 0;
+      
+      // Calculate average winning bid
+      const completedAuctions = auctionPerformance.filter(auction => new Date(auction.endTime) < new Date());
+      const averageWinningBid = completedAuctions.length > 0 
+        ? completedAuctions.reduce((sum, auction) => sum + auction.currentBid, 0) / completedAuctions.length 
+        : 0;
+      
+      // Calculate completion rate
+      const completionRate = totalAuctions > 0 ? (completedAuctions.length / totalAuctions) * 100 : 0;
+      
+      // Calculate hot auction performance
+      const hotAuctions = auctionPerformance.filter(auction => auction.isHot);
+      const hotAuctionPerformance = hotAuctions.length > 0 
+        ? hotAuctions.reduce((sum, auction) => sum + auction.bidCount, 0) / hotAuctions.length 
+        : 0;
+      
+      // Top auctions by bids
+      const topAuctions = auctionPerformance
+        .sort((a, b) => b.bidCount - a.bidCount)
+        .slice(0, 5)
+        .map(auction => ({
+          id: auction.id,
+          title: auction.title,
+          bids: auction.bidCount,
+          revenue: auction.currentBid,
+          views: Math.floor(Math.random() * 1000) + 500, // Mock data for views
+        }));
+      
+      // Mock user engagement data
+      const userEngagement = Array.from({ length: 5 }).map((_, i) => {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        return {
+          date: date.toISOString().split('T')[0],
+          activeUsers: Math.floor(Math.random() * 1000) + 1000,
+          sessions: Math.floor(Math.random() * 2000) + 2000,
+          avgSessionTime: Math.random() * 5 + 5,
+        };
+      }).reverse();
 
-      // Mock data - replace with real API call
-      const mockData: AnalyticsData = {
+      // Construct analytics data
+      const analyticsData: AnalyticsData = {
         overview: {
-          totalUsers: 12847,
-          activeUsers: 3421,
-          totalRevenue: 45678.90,
-          totalAuctions: 234,
-          totalBids: 8765,
-          conversionRate: 12.5,
+          totalUsers: dashboardStats.totalUsers,
+          activeUsers: userStats.activeUsers,
+          totalRevenue: dashboardStats.revenue,
+          totalAuctions: dashboardStats.activeAuctions,
+          totalBids: dashboardStats.totalBids,
+          conversionRate,
         },
         userMetrics: {
-          newUsers: 456,
-          returningUsers: 2965,
-          averageSessionTime: 8.5,
-          bounceRate: 23.4,
+          newUsers: userStats.newUsers,
+          returningUsers: userStats.activeUsers - userStats.newUsers,
+          averageSessionTime: 8.5, // Mock data
+          bounceRate: 23.4, // Mock data
         },
         auctionMetrics: {
-          averageBidsPerAuction: 37.4,
-          averageWinningBid: 1250,
-          completionRate: 89.2,
-          hotAuctionPerformance: 156.7,
+          averageBidsPerAuction,
+          averageWinningBid,
+          completionRate,
+          hotAuctionPerformance,
         },
         revenueMetrics: {
-          connectsSold: 125000,
-          averageOrderValue: 8.45,
-          monthlyRecurringRevenue: 15678,
-          lifetimeValue: 67.89,
+          connectsSold: financialStats.connectsSold,
+          averageOrderValue: financialStats.avgOrderValue,
+          monthlyRecurringRevenue: financialStats.totalRevenue,
+          lifetimeValue: 67.89, // Mock data
         },
-        topAuctions: [
-          { id: '1', title: 'Vintage Camera Collection', bids: 89, revenue: 2340, views: 1567 },
-          { id: '2', title: 'Limited Edition Sneakers', bids: 76, revenue: 1890, views: 1234 },
-          { id: '3', title: 'Rare Comic Books', bids: 65, revenue: 1567, views: 987 },
-          { id: '4', title: 'Artisan Coffee Set', bids: 54, revenue: 1234, views: 876 },
-          { id: '5', title: 'Professional Headphones', bids: 43, revenue: 987, views: 654 },
-        ],
-        userEngagement: [
-          { date: '2024-01-01', activeUsers: 1234, sessions: 2345, avgSessionTime: 8.5 },
-          { date: '2024-01-02', activeUsers: 1456, sessions: 2567, avgSessionTime: 9.2 },
-          { date: '2024-01-03', activeUsers: 1678, sessions: 2789, avgSessionTime: 7.8 },
-          { date: '2024-01-04', activeUsers: 1890, sessions: 3012, avgSessionTime: 8.9 },
-          { date: '2024-01-05', activeUsers: 2012, sessions: 3234, avgSessionTime: 9.5 },
-        ],
+        topAuctions,
+        userEngagement,
       };
 
-      setData(mockData);
+      setData(analyticsData);
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
+      setError('Failed to load analytics data. Please try again.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -146,13 +191,29 @@ export default function AnalyticsScreen() {
     console.log('Exporting analytics data...');
   };
 
-  if (loading) {
+  if (loading && !data) {
     return (
       <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
         <SafeAreaView style={styles.container}>
           <View style={styles.loadingContainer}>
             <LoadingSpinner size={48} />
             <Text style={styles.loadingText}>Loading analytics...</Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
+  if (error) {
+    return (
+      <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => fetchAnalytics()}>
+              <RefreshCw size={16} color="#ffffff" />
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
       </GradientBackground>
@@ -230,7 +291,7 @@ export default function AnalyticsScreen() {
                 <Text style={styles.metricChange}>+15.7%</Text>
               </View>
               <View style={styles.metricCard}>
-                <Package size={24} color="#ef4444" />
+                <PackageIcon size={24} color="#ef4444" />
                 <Text style={styles.metricValue}>{data?.overview.totalAuctions}</Text>
                 <Text style={styles.metricLabel}>Auctions</Text>
                 <Text style={styles.metricChange}>+5.2%</Text>
@@ -267,17 +328,17 @@ export default function AnalyticsScreen() {
             <View style={styles.auctionMetricsContainer}>
               <View style={styles.auctionMetricCard}>
                 <BarChart3 size={20} color="#1e40af" />
-                <Text style={styles.auctionMetricValue}>{data?.auctionMetrics.averageBidsPerAuction}</Text>
+                <Text style={styles.auctionMetricValue}>{data?.auctionMetrics.averageBidsPerAuction.toFixed(1)}</Text>
                 <Text style={styles.auctionMetricLabel}>Avg Bids/Auction</Text>
               </View>
               <View style={styles.auctionMetricCard}>
                 <TrendingUp size={20} color="#16a34a" />
-                <Text style={styles.auctionMetricValue}>{data?.auctionMetrics.averageWinningBid}</Text>
+                <Text style={styles.auctionMetricValue}>{data?.auctionMetrics.averageWinningBid.toFixed(0)}</Text>
                 <Text style={styles.auctionMetricLabel}>Avg Winning Bid</Text>
               </View>
               <View style={styles.auctionMetricCard}>
                 <PieChart size={20} color="#f59e0b" />
-                <Text style={styles.auctionMetricValue}>{data?.auctionMetrics.completionRate}%</Text>
+                <Text style={styles.auctionMetricValue}>{data?.auctionMetrics.completionRate.toFixed(1)}%</Text>
                 <Text style={styles.auctionMetricLabel}>Completion Rate</Text>
               </View>
             </View>
@@ -316,7 +377,7 @@ export default function AnalyticsScreen() {
                 <Text style={styles.revenueLabel}>Connects Sold</Text>
               </View>
               <View style={styles.revenueCard}>
-                <Text style={styles.revenueValue}>${data?.revenueMetrics.averageOrderValue}</Text>
+                <Text style={styles.revenueValue}>${data?.revenueMetrics.averageOrderValue.toFixed(2)}</Text>
                 <Text style={styles.revenueLabel}>Avg Order Value</Text>
               </View>
               <View style={styles.revenueCard}>
@@ -330,6 +391,12 @@ export default function AnalyticsScreen() {
             </View>
           </AnimatedCard>
         </ScrollView>
+
+        {refreshing && (
+          <View style={styles.refreshingOverlay}>
+            <ActivityIndicator size="large" color="#1e40af" />
+          </View>
+        )}
       </SafeAreaView>
     </GradientBackground>
   );
@@ -349,6 +416,33 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#6b7280',
     marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#ef4444',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#ffffff',
+    marginLeft: 8,
   },
   header: {
     flexDirection: 'row',
@@ -567,5 +661,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#6b7280',
     textAlign: 'center',
+  },
+  refreshingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,27 +6,86 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Plus, Users, ChartBar as BarChart3, Settings, Package, TrendingUp, DollarSign, Eye, LogOut, Bell, Shield, Activity, Database, Zap, TriangleAlert as AlertTriangle, FileText, CreditCard, Target, Globe, Lock, Coins, ChartPie as PieChart, Calendar, MessageSquare, Headphones } from 'lucide-react-native';
 import { useAuth } from '@/hooks/useAuth';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
+import { analyticsAPI } from '@/lib/api';
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { user, signOut } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalUsers: 0,
+    activeAuctions: 0,
+    totalBids: 0,
+    revenue: 0,
+  });
 
-  const handleLogout = () => {
-    logout();
-    router.replace('/auth');
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch dashboard stats from API
+      const stats = await analyticsAPI.getDashboardStats();
+      setDashboardStats(stats);
+    } catch (error) {
+      console.error('Failed to fetch dashboard data:', error);
+      setError('Failed to load dashboard data. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      router.replace('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to log out. Please try again.');
+    }
   };
 
   const adminStats = [
-    { title: 'Total Users', value: '12,847', icon: Users, color: '#3b82f6', change: '+12.5%' },
-    { title: 'Active Auctions', value: '234', icon: Package, color: '#10b981', change: '+8.3%' },
-    { title: 'Revenue Today', value: '$15,678', icon: DollarSign, color: '#f59e0b', change: '+23.1%' },
-    { title: 'Total Bids', value: '8,765', icon: TrendingUp, color: '#ef4444', change: '+15.7%' },
+    { 
+      title: 'Total Users', 
+      value: dashboardStats.totalUsers.toLocaleString(), 
+      icon: Users, 
+      color: '#3b82f6', 
+      change: '+12.5%' 
+    },
+    { 
+      title: 'Active Auctions', 
+      value: dashboardStats.activeAuctions.toString(), 
+      icon: Package, 
+      color: '#10b981', 
+      change: '+8.3%' 
+    },
+    { 
+      title: 'Revenue Today', 
+      value: `$${dashboardStats.revenue.toLocaleString()}`, 
+      icon: DollarSign, 
+      color: '#f59e0b', 
+      change: '+23.1%' 
+    },
+    { 
+      title: 'Total Bids', 
+      value: dashboardStats.totalBids.toLocaleString(), 
+      icon: TrendingUp, 
+      color: '#ef4444', 
+      change: '+15.7%' 
+    },
   ];
 
   const adminActions = [
@@ -193,6 +252,36 @@ export default function AdminDashboard() {
     },
   ];
 
+  if (loading) {
+    return (
+      <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#1e40af" />
+            <Text style={styles.loadingText}>Loading dashboard data...</Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
+  if (error) {
+    return (
+      <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.errorContainer}>
+            <AlertTriangle size={48} color="#ef4444" />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchDashboardData}>
+              <RefreshCw size={16} color="#ffffff" />
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
   return (
     <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
       <SafeAreaView style={styles.container}>
@@ -200,7 +289,7 @@ export default function AdminDashboard() {
         <View style={styles.header}>
           <View>
             <Text style={styles.headerTitle}>Admin Dashboard</Text>
-            <Text style={styles.headerSubtitle}>Manage your Volyx platform</Text>
+            <Text style={styles.headerSubtitle}>Welcome back, {user?.name || 'Admin'}</Text>
           </View>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
             <LogOut size={20} color="#ef4444" />
@@ -348,6 +437,45 @@ export default function AdminDashboard() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#6b7280',
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#ef4444',
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#ffffff',
+    marginLeft: 8,
   },
   header: {
     flexDirection: 'row',

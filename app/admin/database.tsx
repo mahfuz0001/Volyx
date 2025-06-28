@@ -6,158 +6,250 @@ import {
   SafeAreaView,
   ScrollView,
   TouchableOpacity,
-  Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Database, HardDrive, Download, Upload, RefreshCw, Trash2, Archive, Clock, CircleCheck as CheckCircle, TriangleAlert as AlertTriangle, Circle as XCircle, ChartBar as BarChart3, Activity, Zap, Shield } from 'lucide-react-native';
+import { ChevronLeft, Server, Database, Wifi, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Clock, Activity, HardDrive, Cpu, MemoryStick, Globe, Shield, Zap } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { db } from '@/lib/database';
+import { useAuth } from '@/hooks/useAuth';
 
-interface DatabaseMetric {
+interface SystemMetric {
   name: string;
   value: string;
-  status: 'good' | 'warning' | 'critical';
-  description: string;
+  status: 'healthy' | 'warning' | 'critical';
   icon: any;
+  description: string;
+  lastUpdated: string;
 }
 
-interface BackupRecord {
-  id: string;
+interface ServiceStatus {
   name: string;
-  size: string;
-  createdAt: string;
-  type: 'automatic' | 'manual';
-  status: 'completed' | 'in_progress' | 'failed';
+  status: 'online' | 'offline' | 'degraded';
+  uptime: string;
+  responseTime: number;
+  lastCheck: string;
+  endpoint?: string;
 }
 
 export default function DatabaseScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState<DatabaseMetric[]>([]);
-  const [backups, setBackups] = useState<BackupRecord[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+  const [systemMetrics, setSystemMetrics] = useState<SystemMetric[]>([]);
+  const [services, setServices] = useState<ServiceStatus[]>([]);
+  const [overallHealth, setOverallHealth] = useState<'healthy' | 'warning' | 'critical'>('healthy');
+  const [error, setError] = useState<string | null>(null);
   const [isBackingUp, setIsBackingUp] = useState(false);
 
   useEffect(() => {
-    fetchDatabaseData();
+    fetchSystemHealth();
   }, []);
 
-  const fetchDatabaseData = async () => {
+  const fetchSystemHealth = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      setLoading(!isRefresh);
+      setRefreshing(isRefresh);
+      setError(null);
+
+      // In a real implementation, you would fetch this data from an API
+      // For now, we'll use mock data
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Check database connection
+      try {
+        // Simple query to check database connection
+        await db.query.users.findMany({ limit: 1 });
+        
+        // If we get here, the database is connected
+        const mockMetrics: SystemMetric[] = [
+          {
+            name: 'Database Size',
+            value: '2.4 GB',
+            status: 'healthy',
+            icon: HardDrive,
+            description: 'Total database storage used',
+            lastUpdated: new Date().toISOString(),
+          },
+          {
+            name: 'Active Connections',
+            value: '23/100',
+            status: 'healthy',
+            icon: Activity,
+            description: 'Current database connections',
+            lastUpdated: new Date().toISOString(),
+          },
+          {
+            name: 'Query Performance',
+            value: '23ms',
+            status: 'healthy',
+            icon: Zap,
+            description: 'Average query response time',
+            lastUpdated: new Date().toISOString(),
+          },
+          {
+            name: 'Storage Usage',
+            value: '67%',
+            status: 'warning',
+            icon: BarChart3,
+            description: 'Database storage utilization',
+            lastUpdated: new Date().toISOString(),
+          },
+          {
+            name: 'Backup Status',
+            value: 'Healthy',
+            status: 'healthy',
+            icon: Shield,
+            description: 'Last backup completed successfully',
+            lastUpdated: new Date().toISOString(),
+          },
+          {
+            name: 'Replication Lag',
+            value: '0.2s',
+            status: 'healthy',
+            icon: RefreshCw,
+            description: 'Database replication delay',
+            lastUpdated: new Date().toISOString(),
+          },
+        ];
 
-      // Mock database metrics
-      const mockMetrics: DatabaseMetric[] = [
-        {
-          name: 'Database Size',
-          value: '2.4 GB',
-          status: 'good',
-          description: 'Total database storage used',
-          icon: HardDrive,
-        },
-        {
-          name: 'Active Connections',
-          value: '23/100',
-          status: 'good',
-          description: 'Current database connections',
-          icon: Activity,
-        },
-        {
-          name: 'Query Performance',
-          value: '23ms',
-          status: 'good',
-          description: 'Average query response time',
-          icon: Zap,
-        },
-        {
-          name: 'Storage Usage',
-          value: '67%',
-          status: 'warning',
-          description: 'Database storage utilization',
-          icon: BarChart3,
-        },
-        {
-          name: 'Backup Status',
-          value: 'Healthy',
-          status: 'good',
-          description: 'Last backup completed successfully',
-          icon: Shield,
-        },
-        {
-          name: 'Replication Lag',
-          value: '0.2s',
-          status: 'good',
-          description: 'Database replication delay',
-          icon: RefreshCw,
-        },
-      ];
+        // Mock service statuses
+        const mockServices: ServiceStatus[] = [
+          {
+            name: 'Database',
+            status: 'online',
+            uptime: '99.9%',
+            responseTime: 23,
+            lastCheck: new Date().toISOString(),
+          },
+          {
+            name: 'Redis Cache',
+            status: 'online',
+            uptime: '99.9%',
+            responseTime: 5,
+            lastCheck: new Date().toISOString(),
+          },
+          {
+            name: 'API Server',
+            status: 'online',
+            uptime: '99.8%',
+            responseTime: 145,
+            lastCheck: new Date().toISOString(),
+            endpoint: '/api/health',
+          },
+          {
+            name: 'Clerk Auth',
+            status: 'online',
+            uptime: '99.9%',
+            responseTime: 89,
+            lastCheck: new Date().toISOString(),
+            endpoint: 'https://api.clerk.dev',
+          },
+          {
+            name: 'Push Notifications',
+            status: 'degraded',
+            uptime: '98.5%',
+            responseTime: 234,
+            lastCheck: new Date().toISOString(),
+            endpoint: 'FCM Service',
+          },
+          {
+            name: 'Payment Gateway',
+            status: 'online',
+            uptime: '99.9%',
+            responseTime: 167,
+            lastCheck: new Date().toISOString(),
+            endpoint: 'Stripe API',
+          },
+          {
+            name: 'Analytics',
+            status: 'online',
+            uptime: '99.6%',
+            responseTime: 78,
+            lastCheck: new Date().toISOString(),
+            endpoint: 'Mixpanel/GA',
+          },
+          {
+            name: 'Error Monitoring',
+            status: 'online',
+            uptime: '99.9%',
+            responseTime: 45,
+            lastCheck: new Date().toISOString(),
+            endpoint: 'Sentry',
+          },
+        ];
 
-      // Mock backup records
-      const mockBackups: BackupRecord[] = [
-        {
-          id: '1',
-          name: 'volyx_backup_2024_01_20_03_00',
-          size: '2.4 GB',
-          createdAt: '2024-01-20T03:00:00Z',
-          type: 'automatic',
-          status: 'completed',
-        },
-        {
-          id: '2',
-          name: 'volyx_backup_2024_01_19_03_00',
-          size: '2.3 GB',
-          createdAt: '2024-01-19T03:00:00Z',
-          type: 'automatic',
-          status: 'completed',
-        },
-        {
-          id: '3',
-          name: 'volyx_manual_backup_2024_01_18',
-          size: '2.3 GB',
-          createdAt: '2024-01-18T15:30:00Z',
-          type: 'manual',
-          status: 'completed',
-        },
-        {
-          id: '4',
-          name: 'volyx_backup_2024_01_18_03_00',
-          size: '2.2 GB',
-          createdAt: '2024-01-18T03:00:00Z',
-          type: 'automatic',
-          status: 'completed',
-        },
-        {
-          id: '5',
-          name: 'volyx_backup_2024_01_17_03_00',
-          size: '2.2 GB',
-          createdAt: '2024-01-17T03:00:00Z',
-          type: 'automatic',
-          status: 'failed',
-        },
-      ];
+        setSystemMetrics(mockMetrics);
+        setServices(mockServices);
 
-      setMetrics(mockMetrics);
-      setBackups(mockBackups);
+        // Calculate overall health
+        const criticalCount = mockMetrics.filter(m => m.status === 'critical').length;
+        const warningCount = mockMetrics.filter(m => m.status === 'warning').length;
+        const offlineServices = mockServices.filter(s => s.status === 'offline').length;
+        const degradedServices = mockServices.filter(s => s.status === 'degraded').length;
+
+        if (criticalCount > 0 || offlineServices > 0) {
+          setOverallHealth('critical');
+        } else if (warningCount > 0 || degradedServices > 0) {
+          setOverallHealth('warning');
+        } else {
+          setOverallHealth('healthy');
+        }
+      } catch (dbError) {
+        console.error('Database connection error:', dbError);
+        
+        // Set critical status for database
+        const mockMetrics: SystemMetric[] = [
+          {
+            name: 'Database Connection',
+            value: 'Offline',
+            status: 'critical',
+            icon: Database,
+            description: 'Database connection status',
+            lastUpdated: new Date().toISOString(),
+          },
+        ];
+        
+        const mockServices: ServiceStatus[] = [
+          {
+            name: 'Database',
+            status: 'offline',
+            uptime: '98.2%',
+            responseTime: 0,
+            lastCheck: new Date().toISOString(),
+          },
+        ];
+        
+        setSystemMetrics(mockMetrics);
+        setServices(mockServices);
+        setOverallHealth('critical');
+      }
     } catch (error) {
-      console.error('Failed to fetch database data:', error);
+      console.error('Failed to fetch system health:', error);
+      setError('Failed to check system health. Please try again.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
+  };
+
+  const handleRefresh = () => {
+    fetchSystemHealth(true);
   };
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'good':
-      case 'completed':
+      case 'healthy':
+      case 'online':
         return '#16a34a';
       case 'warning':
-      case 'in_progress':
+      case 'degraded':
         return '#f59e0b';
       case 'critical':
-      case 'failed':
+      case 'offline':
         return '#ef4444';
       default:
         return '#6b7280';
@@ -166,14 +258,14 @@ export default function DatabaseScreen() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'good':
-      case 'completed':
+      case 'healthy':
+      case 'online':
         return CheckCircle;
       case 'warning':
-      case 'in_progress':
+      case 'degraded':
         return AlertTriangle;
       case 'critical':
-      case 'failed':
+      case 'offline':
         return XCircle;
       default:
         return Clock;
@@ -264,13 +356,83 @@ export default function DatabaseScreen() {
     );
   };
 
-  if (loading) {
+  // Mock backup records
+  interface BackupRecord {
+    id: string;
+    name: string;
+    size: string;
+    createdAt: string;
+    type: 'automatic' | 'manual';
+    status: 'completed' | 'in_progress' | 'failed';
+  }
+
+  const [backups, setBackups] = useState<BackupRecord[]>([
+    {
+      id: '1',
+      name: 'volyx_backup_2024_01_20_03_00',
+      size: '2.4 GB',
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+      type: 'automatic',
+      status: 'completed',
+    },
+    {
+      id: '2',
+      name: 'volyx_backup_2024_01_19_03_00',
+      size: '2.3 GB',
+      createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+      type: 'automatic',
+      status: 'completed',
+    },
+    {
+      id: '3',
+      name: 'volyx_manual_backup_2024_01_18',
+      size: '2.3 GB',
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      type: 'manual',
+      status: 'completed',
+    },
+    {
+      id: '4',
+      name: 'volyx_backup_2024_01_18_03_00',
+      size: '2.2 GB',
+      createdAt: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString(),
+      type: 'automatic',
+      status: 'completed',
+    },
+    {
+      id: '5',
+      name: 'volyx_backup_2024_01_17_03_00',
+      size: '2.2 GB',
+      createdAt: new Date(Date.now() - 4 * 24 * 60 * 60 * 1000).toISOString(),
+      type: 'automatic',
+      status: 'failed',
+    },
+  ]);
+
+  if (loading && systemMetrics.length === 0) {
     return (
       <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
         <SafeAreaView style={styles.container}>
           <View style={styles.loadingContainer}>
             <LoadingSpinner size={48} />
             <Text style={styles.loadingText}>Loading database information...</Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
+  if (error) {
+    return (
+      <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.errorContainer}>
+            <AlertTriangle size={48} color="#ef4444" />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => fetchSystemHealth()}>
+              <RefreshCw size={16} color="#ffffff" />
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
       </GradientBackground>
@@ -289,22 +451,51 @@ export default function DatabaseScreen() {
             <ChevronLeft size={24} color="#111827" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Database Management</Text>
-          <TouchableOpacity style={styles.refreshButton} onPress={fetchDatabaseData}>
-            <RefreshCw size={20} color="#6b7280" />
+          <TouchableOpacity style={styles.refreshButton} onPress={handleRefresh}>
+            <Activity size={20} color="#6b7280" />
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Database Metrics */}
-          <AnimatedCard delay={100} style={styles.section}>
-            <Text style={styles.sectionTitle}>Database Health</Text>
+        <ScrollView 
+          style={styles.content} 
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          }
+        >
+          {/* Overall Health Status */}
+          <AnimatedCard delay={100} style={styles.overallHealthCard}>
+            <View style={styles.overallHealthHeader}>
+              <View style={[styles.healthIndicator, { backgroundColor: getStatusColor(overallHealth) }]}>
+                {React.createElement(getStatusIcon(overallHealth), { size: 24, color: '#ffffff' })}
+              </View>
+              <View style={styles.overallHealthInfo}>
+                <Text style={styles.overallHealthTitle}>System Status</Text>
+                <Text style={[styles.overallHealthStatus, { color: getStatusColor(overallHealth) }]}>
+                  {overallHealth.charAt(0).toUpperCase() + overallHealth.slice(1)}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.overallHealthDescription}>
+              {overallHealth === 'healthy' 
+                ? 'All systems are operating normally'
+                : overallHealth === 'warning'
+                ? 'Some systems require attention'
+                : 'Critical issues detected - immediate action required'
+              }
+            </Text>
+          </AnimatedCard>
+
+          {/* System Metrics */}
+          <AnimatedCard delay={200} style={styles.section}>
+            <Text style={styles.sectionTitle}>System Metrics</Text>
             <View style={styles.metricsGrid}>
-              {metrics.map((metric, index) => {
+              {systemMetrics.map((metric, index) => {
                 const IconComponent = metric.icon;
                 const StatusIcon = getStatusIcon(metric.status);
                 
                 return (
-                  <AnimatedCard key={metric.name} delay={200 + index * 50} style={styles.metricCard}>
+                  <AnimatedCard key={metric.name} delay={300 + index * 50} style={styles.metricCard}>
                     <View style={styles.metricHeader}>
                       <IconComponent size={20} color="#6b7280" />
                       <StatusIcon size={16} color={getStatusColor(metric.status)} />
@@ -318,8 +509,54 @@ export default function DatabaseScreen() {
             </View>
           </AnimatedCard>
 
-          {/* Quick Actions */}
+          {/* Service Status */}
           <AnimatedCard delay={400} style={styles.section}>
+            <Text style={styles.sectionTitle}>Service Status</Text>
+            <View style={styles.servicesList}>
+              {services.map((service, index) => {
+                const StatusIcon = getStatusIcon(service.status);
+                
+                return (
+                  <AnimatedCard key={service.name} delay={500 + index * 50} style={styles.serviceCard}>
+                    <View style={styles.serviceHeader}>
+                      <View style={styles.serviceInfo}>
+                        <Text style={styles.serviceName}>{service.name}</Text>
+                        {service.endpoint && (
+                          <Text style={styles.serviceEndpoint}>{service.endpoint}</Text>
+                        )}
+                      </View>
+                      <View style={styles.serviceStatus}>
+                        <StatusIcon size={16} color={getStatusColor(service.status)} />
+                        <Text style={[styles.serviceStatusText, { color: getStatusColor(service.status) }]}>
+                          {service.status}
+                        </Text>
+                      </View>
+                    </View>
+                    
+                    <View style={styles.serviceMetrics}>
+                      <View style={styles.serviceMetric}>
+                        <Text style={styles.serviceMetricLabel}>Uptime</Text>
+                        <Text style={styles.serviceMetricValue}>{service.uptime}</Text>
+                      </View>
+                      <View style={styles.serviceMetric}>
+                        <Text style={styles.serviceMetricLabel}>Response</Text>
+                        <Text style={styles.serviceMetricValue}>{service.responseTime}ms</Text>
+                      </View>
+                      <View style={styles.serviceMetric}>
+                        <Text style={styles.serviceMetricLabel}>Last Check</Text>
+                        <Text style={styles.serviceMetricValue}>
+                          {new Date(service.lastCheck).toLocaleTimeString()}
+                        </Text>
+                      </View>
+                    </View>
+                  </AnimatedCard>
+                );
+              })}
+            </View>
+          </AnimatedCard>
+
+          {/* Quick Actions */}
+          <AnimatedCard delay={600} style={styles.section}>
             <Text style={styles.sectionTitle}>Quick Actions</Text>
             <View style={styles.actionsGrid}>
               <TouchableOpacity 
@@ -464,6 +701,34 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 16,
   },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#ef4444',
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#ffffff',
+    marginLeft: 8,
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -489,11 +754,55 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
   },
-  section: {
+  overallHealthCard: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 20,
     marginTop: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
+  },
+  overallHealthHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  healthIndicator: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 16,
+  },
+  overallHealthInfo: {
+    flex: 1,
+  },
+  overallHealthTitle: {
+    fontSize: 18,
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
+    marginBottom: 4,
+  },
+  overallHealthStatus: {
+    fontSize: 16,
+    fontFamily: 'Inter-Bold',
+    textTransform: 'uppercase',
+  },
+  overallHealthDescription: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+    color: '#6b7280',
+    lineHeight: 20,
+  },
+  section: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 20,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -526,7 +835,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   metricValue: {
-    fontSize: 20,
+    fontSize: 24,
     fontFamily: 'Inter-Bold',
     color: '#111827',
     marginBottom: 4,
@@ -541,6 +850,62 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#6b7280',
+  },
+  servicesList: {
+    gap: 12,
+  },
+  serviceCard: {
+    backgroundColor: '#f9fafb',
+    borderRadius: 12,
+    padding: 16,
+  },
+  serviceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  serviceInfo: {
+    flex: 1,
+  },
+  serviceName: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
+    marginBottom: 2,
+  },
+  serviceEndpoint: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#6b7280',
+  },
+  serviceStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  serviceStatusText: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+    textTransform: 'uppercase',
+  },
+  serviceMetrics: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  serviceMetric: {
+    alignItems: 'center',
+  },
+  serviceMetricLabel: {
+    fontSize: 10,
+    fontFamily: 'Inter-Medium',
+    color: '#6b7280',
+    marginBottom: 2,
+  },
+  serviceMetricValue: {
+    fontSize: 12,
+    fontFamily: 'Inter-SemiBold',
+    color: '#111827',
   },
   actionsGrid: {
     flexDirection: 'row',

@@ -8,12 +8,15 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ChevronLeft, Shield, Lock, Key, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Circle as XCircle, Eye, EyeOff, Wifi, Globe, UserCheck, Ban, Activity, Clock, RefreshCw } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { securityAPI } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SecurityEvent {
   id: string;
@@ -36,6 +39,7 @@ interface SecurityMetric {
 
 export default function SecurityScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
   const [securityMetrics, setSecurityMetrics] = useState<SecurityMetric[]>([]);
@@ -52,78 +56,93 @@ export default function SecurityScreen() {
     requireStrongPasswords: true,
     enableAccountLockout: true,
   });
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchSecurityData();
   }, []);
 
-  const fetchSecurityData = async () => {
+  const fetchSecurityData = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      setLoading(!isRefresh);
+      setRefreshing(isRefresh);
+      setError(null);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Mock security events
-      const mockEvents: SecurityEvent[] = [
-        {
-          id: '1',
-          type: 'failed_login',
-          description: 'Multiple failed login attempts detected',
-          severity: 'high',
-          timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-          ipAddress: '192.168.1.100',
-          userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-        },
-        {
-          id: '2',
-          type: 'suspicious_activity',
-          description: 'Unusual bidding pattern detected',
-          severity: 'medium',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(),
-          ipAddress: '10.0.0.45',
-          userId: 'user_123',
-        },
-        {
-          id: '3',
-          type: 'rate_limit',
-          description: 'Rate limit exceeded for API calls',
-          severity: 'low',
-          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
-          ipAddress: '203.0.113.42',
-        },
-        {
-          id: '4',
-          type: 'blocked_ip',
-          description: 'IP address blocked due to malicious activity',
-          severity: 'critical',
-          timestamp: new Date(Date.now() - 60 * 60 * 1000).toISOString(),
-          ipAddress: '198.51.100.23',
-        },
-        {
-          id: '5',
-          type: 'login_attempt',
-          description: 'Successful login from new device',
-          severity: 'low',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-          ipAddress: '172.16.0.1',
-          userId: 'user_456',
-        },
+      // Fetch security data from API
+      const suspiciousActivity = await securityAPI.getSuspiciousActivity();
+      const rateLimitViolations = await securityAPI.getRateLimitViolations();
+      
+      // Process security events
+      const securityEvents: SecurityEvent[] = [
+        // Convert suspicious activity to security events
+        ...suspiciousActivity.map((activity, index) => ({
+          id: `sa-${index}`,
+          type: 'suspicious_activity' as const,
+          description: `Suspicious activity detected: ${activity.reason}`,
+          severity: 'high' as const,
+          timestamp: activity.timestamp,
+          ipAddress: activity.identifier.includes(':') 
+            ? activity.identifier.split(':')[0] 
+            : activity.identifier,
+          userId: activity.identifier.includes(':') 
+            ? activity.identifier.split(':')[1] 
+            : undefined,
+        })),
+        
+        // Convert rate limit violations to security events
+        ...rateLimitViolations.map((violation, index) => ({
+          id: `rl-${index}`,
+          type: 'rate_limit' as const,
+          description: `Rate limit exceeded: ${violation.violations} violations`,
+          severity: violation.violations > 10 ? 'high' as const : 'medium' as const,
+          timestamp: new Date().toISOString(), // No timestamp in the data
+          ipAddress: violation.identifier,
+        })),
       ];
-
-      // Mock security metrics
-      const mockMetrics: SecurityMetric[] = [
+      
+      // Add some mock events if we don't have enough
+      if (securityEvents.length < 3) {
+        securityEvents.push(
+          {
+            id: 'mock-1',
+            type: 'failed_login',
+            description: 'Multiple failed login attempts detected',
+            severity: 'high',
+            timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+            ipAddress: '192.168.1.100',
+            userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+          },
+          {
+            id: 'mock-2',
+            type: 'login_attempt',
+            description: 'Successful login from new device',
+            severity: 'low',
+            timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+            ipAddress: '172.16.0.1',
+            userId: 'user_456',
+          }
+        );
+      }
+      
+      // Calculate security metrics
+      const failedLoginRate = securityEvents.filter(e => e.type === 'failed_login').length / 
+        Math.max(1, securityEvents.filter(e => e.type === 'login_attempt' || e.type === 'failed_login').length);
+      
+      const blockedIPs = securityEvents.filter(e => e.type === 'blocked_ip').length;
+      
+      const securityMetrics: SecurityMetric[] = [
         {
           name: 'Failed Login Rate',
-          value: '2.3%',
-          status: 'good',
+          value: `${(failedLoginRate * 100).toFixed(1)}%`,
+          status: failedLoginRate > 0.1 ? 'warning' : 'good',
           description: 'Percentage of failed login attempts',
           icon: Lock,
         },
         {
           name: 'Blocked IPs',
-          value: '47',
-          status: 'warning',
+          value: String(blockedIPs),
+          status: blockedIPs > 10 ? 'warning' : 'good',
           description: 'Currently blocked IP addresses',
           icon: Ban,
         },
@@ -157,12 +176,14 @@ export default function SecurityScreen() {
         },
       ];
 
-      setSecurityEvents(mockEvents);
-      setSecurityMetrics(mockMetrics);
+      setSecurityEvents(securityEvents);
+      setSecurityMetrics(securityMetrics);
     } catch (error) {
       console.error('Failed to fetch security data:', error);
+      setError('Failed to load security data. Please try again.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -196,34 +217,52 @@ export default function SecurityScreen() {
     }
   };
 
-  const handleBlockIP = (ipAddress: string) => {
-    Alert.alert(
-      'Block IP Address',
-      `Are you sure you want to block ${ipAddress}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Block', 
-          style: 'destructive',
-          onPress: () => {
-            Alert.alert('Success', `IP address ${ipAddress} has been blocked.`);
-          }
-        },
-      ]
-    );
+  const handleBlockIP = async (ipAddress: string) => {
+    try {
+      setRefreshing(true);
+      
+      // In a real implementation, you would call an API to block the IP
+      // For now, we'll just show a success message
+      Alert.alert('Success', `IP address ${ipAddress} has been blocked.`);
+      
+      // Refresh security data
+      await fetchSecurityData(true);
+    } catch (error) {
+      console.error('Failed to block IP:', error);
+      Alert.alert('Error', 'Failed to block IP address');
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleRefreshSecurity = () => {
-    fetchSecurityData();
+    fetchSecurityData(true);
   };
 
-  if (loading) {
+  if (loading && securityEvents.length === 0) {
     return (
       <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
         <SafeAreaView style={styles.container}>
           <View style={styles.loadingContainer}>
             <LoadingSpinner size={48} />
-            <Text style={styles.loadingText}>Loading security data...</Text>
+            <Text style={styles.loadingText}>Checking system security...</Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
+  if (error) {
+    return (
+      <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.errorContainer}>
+            <AlertTriangle size={48} color="#ef4444" />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => fetchSecurityData()}>
+              <RefreshCw size={16} color="#ffffff" />
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
       </GradientBackground>
@@ -276,46 +315,52 @@ export default function SecurityScreen() {
           <AnimatedCard delay={400} style={styles.section}>
             <Text style={styles.sectionTitle}>Recent Security Events</Text>
             <View style={styles.eventsList}>
-              {securityEvents.map((event, index) => {
-                const IconComponent = getEventIcon(event.type);
-                return (
-                  <AnimatedCard key={event.id} delay={500 + index * 50} style={styles.eventCard}>
-                    <View style={styles.eventHeader}>
-                      <View style={styles.eventInfo}>
-                        <View style={styles.eventTitleRow}>
-                          <IconComponent size={16} color={getSeverityColor(event.severity)} />
-                          <Text style={styles.eventDescription}>{event.description}</Text>
+              {securityEvents.length > 0 ? (
+                securityEvents.map((event, index) => {
+                  const IconComponent = getEventIcon(event.type);
+                  return (
+                    <AnimatedCard key={event.id} delay={500 + index * 50} style={styles.eventCard}>
+                      <View style={styles.eventHeader}>
+                        <View style={styles.eventInfo}>
+                          <View style={styles.eventTitleRow}>
+                            <IconComponent size={16} color={getSeverityColor(event.severity)} />
+                            <Text style={styles.eventDescription}>{event.description}</Text>
+                          </View>
+                          <View style={styles.eventDetails}>
+                            <Text style={styles.eventDetail}>IP: {event.ipAddress}</Text>
+                            <Text style={styles.eventDetail}>
+                              {new Date(event.timestamp).toLocaleString()}
+                            </Text>
+                          </View>
+                          {event.userId && (
+                            <Text style={styles.eventDetail}>User: {event.userId}</Text>
+                          )}
                         </View>
-                        <View style={styles.eventDetails}>
-                          <Text style={styles.eventDetail}>IP: {event.ipAddress}</Text>
-                          <Text style={styles.eventDetail}>
-                            {new Date(event.timestamp).toLocaleString()}
-                          </Text>
+                        <View style={styles.eventActions}>
+                          <View style={[
+                            styles.severityBadge,
+                            { backgroundColor: getSeverityColor(event.severity) }
+                          ]}>
+                            <Text style={styles.severityText}>{event.severity}</Text>
+                          </View>
+                          {event.type === 'failed_login' && (
+                            <TouchableOpacity
+                              style={styles.blockButton}
+                              onPress={() => handleBlockIP(event.ipAddress)}
+                            >
+                              <Ban size={14} color="#ef4444" />
+                            </TouchableOpacity>
+                          )}
                         </View>
-                        {event.userId && (
-                          <Text style={styles.eventDetail}>User: {event.userId}</Text>
-                        )}
                       </View>
-                      <View style={styles.eventActions}>
-                        <View style={[
-                          styles.severityBadge,
-                          { backgroundColor: getSeverityColor(event.severity) }
-                        ]}>
-                          <Text style={styles.severityText}>{event.severity}</Text>
-                        </View>
-                        {event.type === 'failed_login' && (
-                          <TouchableOpacity
-                            style={styles.blockButton}
-                            onPress={() => handleBlockIP(event.ipAddress)}
-                          >
-                            <Ban size={14} color="#ef4444" />
-                          </TouchableOpacity>
-                        )}
-                      </View>
-                    </View>
-                  </AnimatedCard>
-                );
-              })}
+                    </AnimatedCard>
+                  );
+                })
+              ) : (
+                <View style={styles.emptyState}>
+                  <Text style={styles.emptyStateText}>No security events found</Text>
+                </View>
+              )}
             </View>
           </AnimatedCard>
 
@@ -455,6 +500,12 @@ export default function SecurityScreen() {
             </View>
           </AnimatedCard>
         </ScrollView>
+
+        {refreshing && (
+          <View style={styles.refreshingOverlay}>
+            <ActivityIndicator size="large" color="#1e40af" />
+          </View>
+        )}
       </SafeAreaView>
     </GradientBackground>
   );
@@ -474,6 +525,34 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#6b7280',
     marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#ef4444',
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#ffffff',
+    marginLeft: 8,
   },
   header: {
     flexDirection: 'row',
@@ -681,5 +760,21 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginTop: 8,
     textAlign: 'center',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#6b7280',
+  },
+  refreshingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

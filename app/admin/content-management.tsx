@@ -10,12 +10,15 @@ import {
   Modal,
   Alert,
   Image,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChevronLeft, Plus, Search, ListFilter as Filter, MoveVertical as MoreVertical, LocationEdit as Edit, Trash2, Eye, EyeOff, Upload, Download, RefreshCw, Calendar, Tag, Star, TrendingUp, Package, Image as ImageIcon, FileText, Settings, Copy, ExternalLink } from 'lucide-react-native';
+import { ChevronLeft, Plus, Search, ListFilter as Filter, MoveVertical as MoreVertical, LocationEdit as Edit, Trash2, Eye, EyeOff, Upload, Download, RefreshCw, Calendar, Tag, Star, TrendingUp, Package, Image as ImageIcon, FileText, Settings, Copy, ExternalLink, AlertTriangle } from 'lucide-react-native';
 import AnimatedCard from '@/components/AnimatedCard';
 import GradientBackground from '@/components/GradientBackground';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { contentAPI } from '@/lib/api';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ContentItem {
   id: string;
@@ -46,6 +49,7 @@ interface ContentFilters {
 
 export default function ContentManagementScreen() {
   const router = useRouter();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState<ContentItem[]>([]);
   const [filteredContent, setFilteredContent] = useState<ContentItem[]>([]);
@@ -54,6 +58,8 @@ export default function ContentManagementScreen() {
   const [showContentModal, setShowContentModal] = useState(false);
   const [selectedContent, setSelectedContent] = useState<ContentItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   
   const [filters, setFilters] = useState<ContentFilters>({
     type: 'all',
@@ -80,114 +86,108 @@ export default function ContentManagementScreen() {
     filterContent();
   }, [content, searchQuery, filters]);
 
-  const fetchContent = async () => {
+  const fetchContent = async (isRefresh = false) => {
     try {
-      setLoading(true);
+      setLoading(!isRefresh);
+      setRefreshing(isRefresh);
+      setError(null);
       
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Mock content data
+      // Fetch auctions from API
+      const auctions = await contentAPI.getAllAuctions();
+      const categories = await contentAPI.getAllCategories();
+      
+      // Transform auctions to content items
+      const auctionContent: ContentItem[] = auctions.map(auction => ({
+        id: auction.id,
+        title: auction.title,
+        description: auction.description,
+        type: 'auction',
+        status: auction.isActive ? 'published' : 'draft',
+        author: 'Admin User', // This would come from the user who created it
+        createdAt: auction.createdAt,
+        updatedAt: auction.updatedAt,
+        publishedAt: auction.isActive ? auction.createdAt : undefined,
+        image: auction.image,
+        tags: [auction.categoryName], // This would be actual tags in production
+        views: auction.bidCount * 5, // Approximation for views
+        isHot: auction.isHot,
+        isFeatured: auction.isFeatured,
+        category: auction.categoryName,
+        priority: auction.isHot ? 'high' : auction.isFeatured ? 'medium' : 'low',
+      }));
+      
+      // Transform categories to content items
+      const categoryContent: ContentItem[] = categories.map(category => ({
+        id: category.id,
+        title: `${category.name} Category`,
+        description: `Category page for ${category.name.toLowerCase()} items`,
+        type: 'category',
+        status: 'published',
+        author: 'Admin User',
+        createdAt: category.createdAt,
+        updatedAt: category.createdAt, // Categories don't have updatedAt in our schema
+        publishedAt: category.createdAt,
+        tags: ['category', category.name.toLowerCase()],
+        views: Math.floor(Math.random() * 5000) + 1000, // Mock views
+        priority: 'medium',
+      }));
+      
+      // Add some mock content for other types
       const mockContent: ContentItem[] = [
         {
-          id: '1',
-          title: 'Vintage Camera Collection',
-          description: 'Rare vintage cameras from the 1950s-1980s',
-          type: 'auction',
-          status: 'published',
-          author: 'John Curator',
-          createdAt: '2024-01-15',
-          updatedAt: '2024-01-20',
-          publishedAt: '2024-01-16',
-          image: 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=800',
-          tags: ['vintage', 'cameras', 'collectibles'],
-          views: 1247,
-          isHot: true,
-          isFeatured: true,
-          category: 'Electronics',
-          priority: 'high',
-        },
-        {
-          id: '2',
-          title: 'Limited Edition Sneakers',
-          description: 'Exclusive sneaker collaboration with certificate of authenticity',
-          type: 'auction',
-          status: 'published',
-          author: 'Jane Curator',
-          createdAt: '2024-01-10',
-          updatedAt: '2024-01-18',
-          publishedAt: '2024-01-12',
-          image: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=800',
-          tags: ['sneakers', 'fashion', 'limited-edition'],
-          views: 892,
-          isHot: false,
-          isFeatured: false,
-          category: 'Fashion',
-          priority: 'medium',
-        },
-        {
-          id: '3',
-          title: 'Electronics Category',
-          description: 'Category page for electronic items and gadgets',
-          type: 'category',
-          status: 'published',
-          author: 'Admin User',
-          createdAt: '2024-01-05',
-          updatedAt: '2024-01-15',
-          publishedAt: '2024-01-06',
-          tags: ['category', 'electronics'],
-          views: 3421,
-          priority: 'high',
-        },
-        {
-          id: '4',
+          id: 'banner-1',
           title: 'Welcome Banner',
           description: 'Main homepage banner for new users',
           type: 'banner',
           status: 'published',
           author: 'Design Team',
-          createdAt: '2024-01-01',
-          updatedAt: '2024-01-10',
-          publishedAt: '2024-01-02',
+          createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+          publishedAt: new Date(Date.now() - 19 * 24 * 60 * 60 * 1000).toISOString(),
           image: 'https://images.pexels.com/photos/1337247/pexels-photo-1337247.jpeg?auto=compress&cs=tinysrgb&w=800',
           tags: ['banner', 'homepage', 'welcome'],
           views: 5678,
           priority: 'high',
         },
         {
-          id: '5',
+          id: 'notification-1',
           title: 'Spring Auction Event',
           description: 'Upcoming spring auction event announcement',
           type: 'notification',
           status: 'scheduled',
           author: 'Marketing Team',
-          createdAt: '2024-01-18',
-          updatedAt: '2024-01-19',
-          scheduledFor: '2024-03-01',
+          createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          scheduledFor: new Date(Date.now() + 40 * 24 * 60 * 60 * 1000).toISOString(),
           tags: ['event', 'spring', 'announcement'],
           views: 0,
           priority: 'medium',
         },
         {
-          id: '6',
+          id: 'page-1',
           title: 'About Us Page',
           description: 'Company information and mission statement',
           type: 'page',
           status: 'draft',
           author: 'Content Team',
-          createdAt: '2024-01-20',
-          updatedAt: '2024-01-20',
+          createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
+          updatedAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
           tags: ['about', 'company', 'static'],
           views: 0,
           priority: 'low',
         },
       ];
-
-      setContent(mockContent);
+      
+      // Combine all content
+      const allContent = [...auctionContent, ...categoryContent, ...mockContent];
+      
+      setContent(allContent);
     } catch (error) {
       console.error('Failed to fetch content:', error);
+      setError('Failed to load content. Please try again.');
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
@@ -270,8 +270,8 @@ export default function ContentManagementScreen() {
       item.id === id ? { 
         ...item, 
         status, 
-        publishedAt: status === 'published' ? new Date().toISOString().split('T')[0] : item.publishedAt,
-        updatedAt: new Date().toISOString().split('T')[0]
+        publishedAt: status === 'published' ? new Date().toISOString() : item.publishedAt,
+        updatedAt: new Date().toISOString()
       } : item
     ));
   };
@@ -282,8 +282,8 @@ export default function ContentManagementScreen() {
       id: Date.now().toString(),
       title: `${item.title} (Copy)`,
       status: 'draft',
-      createdAt: new Date().toISOString().split('T')[0],
-      updatedAt: new Date().toISOString().split('T')[0],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
       publishedAt: undefined,
       views: 0,
     };
@@ -309,9 +309,9 @@ export default function ContentManagementScreen() {
         description: newContent.description,
         type: newContent.type as any,
         status: newContent.status as any,
-        author: 'Current User',
-        createdAt: new Date().toISOString().split('T')[0],
-        updatedAt: new Date().toISOString().split('T')[0],
+        author: user?.name || 'Admin User',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         scheduledFor: newContent.scheduledFor || undefined,
         tags: newContent.tags.split(',').map(tag => tag.trim()).filter(Boolean),
         views: 0,
@@ -366,13 +366,30 @@ export default function ContentManagementScreen() {
     }
   };
 
-  if (loading) {
+  if (loading && content.length === 0) {
     return (
       <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
         <SafeAreaView style={styles.container}>
           <View style={styles.loadingContainer}>
             <LoadingSpinner size={48} />
             <Text style={styles.loadingText}>Loading content...</Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
+
+  if (error) {
+    return (
+      <GradientBackground colors={['#f8fafc', '#e2e8f0']}>
+        <SafeAreaView style={styles.container}>
+          <View style={styles.errorContainer}>
+            <AlertTriangle size={48} color="#ef4444" />
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={fetchContent}>
+              <RefreshCw size={16} color="#ffffff" />
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
       </GradientBackground>
@@ -395,7 +412,7 @@ export default function ContentManagementScreen() {
             <TouchableOpacity style={styles.headerAction} onPress={() => setShowCreateModal(true)}>
               <Plus size={20} color="#6b7280" />
             </TouchableOpacity>
-            <TouchableOpacity style={styles.headerAction} onPress={fetchContent}>
+            <TouchableOpacity style={styles.headerAction} onPress={() => fetchContent(true)}>
               <RefreshCw size={20} color="#6b7280" />
             </TouchableOpacity>
           </View>
@@ -500,90 +517,109 @@ export default function ContentManagementScreen() {
               Content ({filteredContent.length})
             </Text>
             
-            {filteredContent.map((item, index) => {
-              const TypeIcon = getTypeIcon(item.type);
-              
-              return (
-                <AnimatedCard key={item.id} delay={400 + index * 50} style={styles.contentCard}>
-                  <View style={styles.contentHeader}>
-                    <View style={styles.contentInfo}>
-                      <View style={styles.contentTitleRow}>
-                        <TypeIcon size={16} color="#6b7280" />
-                        <Text style={styles.contentTitle}>{item.title}</Text>
-                        {item.isHot && <TrendingUp size={14} color="#ef4444" />}
-                        {item.isFeatured && <Star size={14} color="#f59e0b" />}
+            {filteredContent.length > 0 ? (
+              filteredContent.map((item, index) => {
+                const TypeIcon = getTypeIcon(item.type);
+                
+                return (
+                  <AnimatedCard key={item.id} delay={400 + index * 50} style={styles.contentCard}>
+                    <View style={styles.contentHeader}>
+                      <View style={styles.contentInfo}>
+                        <View style={styles.contentTitleRow}>
+                          <TypeIcon size={16} color="#6b7280" />
+                          <Text style={styles.contentTitle}>{item.title}</Text>
+                          {item.isHot && <TrendingUp size={14} color="#ef4444" />}
+                          {item.isFeatured && <Star size={14} color="#f59e0b" />}
+                        </View>
+                        <Text style={styles.contentDescription} numberOfLines={2}>
+                          {item.description}
+                        </Text>
+                        <View style={styles.contentMeta}>
+                          <Text style={styles.contentMetaText}>By {item.author}</Text>
+                          <Text style={styles.contentMetaText}>•</Text>
+                          <Text style={styles.contentMetaText}>
+                            {new Date(item.updatedAt).toLocaleDateString()}
+                          </Text>
+                          <Text style={styles.contentMetaText}>•</Text>
+                          <Text style={styles.contentMetaText}>{item.views} views</Text>
+                        </View>
+                        <View style={styles.contentTags}>
+                          {item.tags.slice(0, 3).map((tag, tagIndex) => (
+                            <View key={tagIndex} style={styles.tag}>
+                              <Text style={styles.tagText}>{tag}</Text>
+                            </View>
+                          ))}
+                        </View>
                       </View>
-                      <Text style={styles.contentDescription} numberOfLines={2}>
-                        {item.description}
-                      </Text>
-                      <View style={styles.contentMeta}>
-                        <Text style={styles.contentMetaText}>By {item.author}</Text>
-                        <Text style={styles.contentMetaText}>•</Text>
-                        <Text style={styles.contentMetaText}>{item.updatedAt}</Text>
-                        <Text style={styles.contentMetaText}>•</Text>
-                        <Text style={styles.contentMetaText}>{item.views} views</Text>
-                      </View>
-                      <View style={styles.contentTags}>
-                        {item.tags.slice(0, 3).map((tag, tagIndex) => (
-                          <View key={tagIndex} style={styles.tag}>
-                            <Text style={styles.tagText}>{tag}</Text>
-                          </View>
-                        ))}
-                      </View>
+                      
+                      {item.image && (
+                        <Image source={{ uri: item.image }} style={styles.contentImage} />
+                      )}
                     </View>
-                    
-                    {item.image && (
-                      <Image source={{ uri: item.image }} style={styles.contentImage} />
-                    )}
-                  </View>
 
-                  <View style={styles.contentFooter}>
-                    <View style={styles.contentBadges}>
-                      <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-                        <Text style={styles.statusBadgeText}>{item.status}</Text>
+                    <View style={styles.contentFooter}>
+                      <View style={styles.contentBadges}>
+                        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                          <Text style={styles.statusBadgeText}>{item.status}</Text>
+                        </View>
+                        <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
+                          <Text style={styles.priorityBadgeText}>{item.priority}</Text>
+                        </View>
+                        <View style={styles.typeBadge}>
+                          <Text style={styles.typeBadgeText}>{item.type}</Text>
+                        </View>
                       </View>
-                      <View style={[styles.priorityBadge, { backgroundColor: getPriorityColor(item.priority) }]}>
-                        <Text style={styles.priorityBadgeText}>{item.priority}</Text>
-                      </View>
-                      <View style={styles.typeBadge}>
-                        <Text style={styles.typeBadgeText}>{item.type}</Text>
+                      
+                      <View style={styles.contentActions}>
+                        <TouchableOpacity
+                          style={styles.contentActionButton}
+                          onPress={() => handleContentAction('view', item)}
+                        >
+                          <Eye size={16} color="#6b7280" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.contentActionButton}
+                          onPress={() => handleContentAction('edit', item)}
+                        >
+                          <Edit size={16} color="#6b7280" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.contentActionButton}
+                          onPress={() => handleContentAction('duplicate', item)}
+                        >
+                          <Copy size={16} color="#6b7280" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={styles.contentActionButton}
+                          onPress={() => handleContentAction(item.status === 'published' ? 'unpublish' : 'publish', item)}
+                        >
+                          {item.status === 'published' ? (
+                            <EyeOff size={16} color="#f59e0b" />
+                          ) : (
+                            <Eye size={16} color="#16a34a" />
+                          )}
+                        </TouchableOpacity>
                       </View>
                     </View>
-                    
-                    <View style={styles.contentActions}>
-                      <TouchableOpacity
-                        style={styles.contentActionButton}
-                        onPress={() => handleContentAction('view', item)}
-                      >
-                        <Eye size={16} color="#6b7280" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.contentActionButton}
-                        onPress={() => handleContentAction('edit', item)}
-                      >
-                        <Edit size={16} color="#6b7280" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.contentActionButton}
-                        onPress={() => handleContentAction('duplicate', item)}
-                      >
-                        <Copy size={16} color="#6b7280" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.contentActionButton}
-                        onPress={() => handleContentAction(item.status === 'published' ? 'unpublish' : 'publish', item)}
-                      >
-                        {item.status === 'published' ? (
-                          <EyeOff size={16} color="#f59e0b" />
-                        ) : (
-                          <Eye size={16} color="#16a34a" />
-                        )}
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                </AnimatedCard>
-              );
-            })}
+                  </AnimatedCard>
+                );
+              })
+            ) : (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No content found</Text>
+                <TouchableOpacity style={styles.emptyStateButton} onPress={() => {
+                  setSearchQuery('');
+                  setFilters({
+                    type: 'all',
+                    status: 'all',
+                    author: 'all',
+                    dateRange: 'all',
+                  });
+                }}>
+                  <Text style={styles.emptyStateButtonText}>Clear Filters</Text>
+                </TouchableOpacity>
+              </View>
+            )}
           </AnimatedCard>
         </ScrollView>
 
@@ -620,11 +656,15 @@ export default function ContentManagementScreen() {
                   </View>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Created:</Text>
-                    <Text style={styles.detailValue}>{selectedContent.createdAt}</Text>
+                    <Text style={styles.detailValue}>
+                      {new Date(selectedContent.createdAt).toLocaleDateString()}
+                    </Text>
                   </View>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Updated:</Text>
-                    <Text style={styles.detailValue}>{selectedContent.updatedAt}</Text>
+                    <Text style={styles.detailValue}>
+                      {new Date(selectedContent.updatedAt).toLocaleDateString()}
+                    </Text>
                   </View>
                   <View style={styles.detailRow}>
                     <Text style={styles.detailLabel}>Views:</Text>
@@ -811,6 +851,12 @@ export default function ContentManagementScreen() {
             </View>
           </View>
         </Modal>
+
+        {refreshing && (
+          <View style={styles.refreshingOverlay}>
+            <ActivityIndicator size="large" color="#1e40af" />
+          </View>
+        )}
       </SafeAreaView>
     </GradientBackground>
   );
@@ -830,6 +876,34 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Medium',
     color: '#6b7280',
     marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#ef4444',
+    marginTop: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#ffffff',
+    marginLeft: 8,
   },
   header: {
     flexDirection: 'row',
@@ -1299,5 +1373,33 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter-SemiBold',
     color: '#ffffff',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#6b7280',
+    marginBottom: 16,
+  },
+  emptyStateButton: {
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  emptyStateButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#ffffff',
+  },
+  refreshingOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
