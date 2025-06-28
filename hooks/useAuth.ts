@@ -1,7 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { db, users } from '@/lib/database';
 import { eq } from 'drizzle-orm';
-import { setUser as setSentryUser } from '@/lib/sentry';
 
 interface User {
   id: string;
@@ -50,12 +49,12 @@ export const useAuthProvider = () => {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      
+
       // For demo purposes, we'll simulate authentication
       // In production, you'd validate against your auth service
-      
+
       let userData: User;
-      
+
       if (email === 'admin@example.com') {
         userData = {
           id: 'admin-id',
@@ -75,8 +74,7 @@ export const useAuthProvider = () => {
       }
 
       setUser(userData);
-      setSentryUser(userData);
-      
+
       return true;
     } catch (error) {
       console.error('Login error:', error);
@@ -88,7 +86,6 @@ export const useAuthProvider = () => {
 
   const logout = () => {
     setUser(null);
-    setSentryUser({ id: '', email: '', name: '' });
   };
 
   return {

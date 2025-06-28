@@ -10,16 +10,16 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { 
-  TrendingUp, 
-  Clock, 
-  Trophy, 
+import {
+  TrendingUp,
+  Clock,
+  Trophy,
   Eye,
   Heart,
   Gavel,
   Award,
   Target,
-  Activity
+  Activity,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import CountdownTimer from '@/components/CountdownTimer';
@@ -31,7 +31,8 @@ const myBids = [
   {
     id: '1',
     title: 'Vintage Rolex Submariner',
-    image: 'https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg?auto=compress&cs=tinysrgb&w=800',
     myBid: 15750,
     currentBid: 16200,
     endTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
@@ -42,7 +43,8 @@ const myBids = [
   {
     id: '2',
     title: 'Limited Edition Hermès Birkin',
-    image: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?auto=compress&cs=tinysrgb&w=800',
     myBid: 28900,
     currentBid: 28900,
     endTime: new Date(Date.now() + 45 * 60 * 1000),
@@ -53,7 +55,8 @@ const myBids = [
   {
     id: '3',
     title: 'Vintage Gibson Les Paul',
-    image: 'https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=800',
     myBid: 12500,
     currentBid: 12500,
     endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
@@ -67,7 +70,8 @@ const wonItems = [
   {
     id: '4',
     title: 'Leica M6 Camera',
-    image: 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=800',
     winningBid: 3250,
     wonAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
     status: 'won',
@@ -75,7 +79,8 @@ const wonItems = [
   {
     id: '5',
     title: 'Supreme Box Logo Hoodie',
-    image: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=800',
     winningBid: 1850,
     wonAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
     status: 'won',
@@ -86,7 +91,8 @@ const watchlist = [
   {
     id: '6',
     title: 'Rare Pokémon Card Collection',
-    image: 'https://images.pexels.com/photos/1337247/pexels-photo-1337247.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/1337247/pexels-photo-1337247.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 8750,
     endTime: new Date(Date.now() + 6 * 60 * 60 * 1000),
     bidCount: 156,
@@ -94,7 +100,8 @@ const watchlist = [
   {
     id: '7',
     title: 'Vintage Omega Speedmaster',
-    image: 'https://images.pexels.com/photos/277390/pexels-photo-277390.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/277390/pexels-photo-277390.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 6750,
     endTime: new Date(Date.now() + 5 * 60 * 60 * 1000),
     bidCount: 67,
@@ -104,29 +111,39 @@ const watchlist = [
 export default function AuctionsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const [activeTab, setActiveTab] = useState<'active' | 'won' | 'watching'>('active');
+  const [activeTab, setActiveTab] = useState<'active' | 'won' | 'watching'>(
+    'active'
+  );
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'winning': return '#16A34A';
-      case 'outbid': return '#EF4444';
-      case 'won': return '#0EA5E9';
-      default: return '#6B7280';
+      case 'winning':
+        return '#16A34A';
+      case 'outbid':
+        return '#EF4444';
+      case 'won':
+        return '#0EA5E9';
+      default:
+        return '#6B7280';
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'winning': return Trophy;
-      case 'outbid': return TrendingUp;
-      case 'won': return Award;
-      default: return Clock;
+      case 'winning':
+        return Trophy;
+      case 'outbid':
+        return TrendingUp;
+      case 'won':
+        return Award;
+      default:
+        return Clock;
     }
   };
 
   const BidCard = ({ item }: { item: any }) => {
     const StatusIcon = getStatusIcon(item.status);
-    
+
     return (
       <TouchableOpacity
         style={styles.bidCard}
@@ -135,17 +152,22 @@ export default function AuctionsScreen() {
       >
         <View style={styles.bidImageContainer}>
           <Image source={{ uri: item.image }} style={styles.bidImage} />
-          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+          <View
+            style={[
+              styles.statusBadge,
+              { backgroundColor: getStatusColor(item.status) },
+            ]}
+          >
             <StatusIcon size={12} color="#FFFFFF" />
             <Text style={styles.statusText}>{item.status.toUpperCase()}</Text>
           </View>
         </View>
-        
+
         <View style={styles.bidContent}>
           <Text style={styles.bidTitle} numberOfLines={2}>
             {item.title}
           </Text>
-          
+
           <View style={styles.bidInfo}>
             <View style={styles.bidRow}>
               <Text style={styles.bidLabel}>My Bid</Text>
@@ -153,18 +175,20 @@ export default function AuctionsScreen() {
                 {item.myBid.toLocaleString()} Connects
               </Text>
             </View>
-            
+
             <View style={styles.bidRow}>
               <Text style={styles.bidLabel}>Current Bid</Text>
-              <Text style={[
-                styles.currentBidAmount,
-                { color: item.isWinning ? '#16A34A' : '#EF4444' }
-              ]}>
+              <Text
+                style={[
+                  styles.currentBidAmount,
+                  { color: item.isWinning ? '#16A34A' : '#EF4444' },
+                ]}
+              >
                 {item.currentBid.toLocaleString()} Connects
               </Text>
             </View>
           </View>
-          
+
           <View style={styles.bidFooter}>
             <View style={styles.bidStats}>
               <Gavel size={12} color="#6B7280" />
@@ -185,15 +209,12 @@ export default function AuctionsScreen() {
     >
       <View style={styles.wonImageContainer}>
         <Image source={{ uri: item.image }} style={styles.wonImage} />
-        <LinearGradient
-          colors={['#0EA5E9', '#0284C7']}
-          style={styles.wonBadge}
-        >
+        <LinearGradient colors={['#0EA5E9', '#0284C7']} style={styles.wonBadge}>
           <Trophy size={12} color="#FFFFFF" />
           <Text style={styles.wonText}>WON</Text>
         </LinearGradient>
       </View>
-      
+
       <View style={styles.wonContent}>
         <Text style={styles.wonTitle} numberOfLines={2}>
           {item.title}
@@ -201,9 +222,7 @@ export default function AuctionsScreen() {
         <Text style={styles.winningBid}>
           Won for {item.winningBid.toLocaleString()} Connects
         </Text>
-        <Text style={styles.wonDate}>
-          {item.wonAt.toLocaleDateString()}
-        </Text>
+        <Text style={styles.wonDate}>{item.wonAt.toLocaleDateString()}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -220,7 +239,7 @@ export default function AuctionsScreen() {
           <Heart size={14} color="#FF3B30" fill="#FF3B30" />
         </TouchableOpacity>
       </View>
-      
+
       <View style={styles.watchContent}>
         <Text style={styles.watchTitle} numberOfLines={2}>
           {item.title}
@@ -280,37 +299,25 @@ export default function AuctionsScreen() {
 
       {/* Stats */}
       <View style={styles.statsContainer}>
-        <LinearGradient
-          colors={['#16A34A', '#15803D']}
-          style={styles.statCard}
-        >
+        <LinearGradient colors={['#16A34A', '#15803D']} style={styles.statCard}>
           <Trophy size={20} color="#FFFFFF" />
           <Text style={styles.statNumber}>{wonItems.length}</Text>
           <Text style={styles.statLabel}>Won</Text>
         </LinearGradient>
-        
-        <LinearGradient
-          colors={['#FF7F00', '#FF6B35']}
-          style={styles.statCard}
-        >
+
+        <LinearGradient colors={['#FF7F00', '#FF6B35']} style={styles.statCard}>
           <Activity size={20} color="#FFFFFF" />
           <Text style={styles.statNumber}>{myBids.length}</Text>
           <Text style={styles.statLabel}>Active Bids</Text>
         </LinearGradient>
-        
-        <LinearGradient
-          colors={['#0EA5E9', '#0284C7']}
-          style={styles.statCard}
-        >
+
+        <LinearGradient colors={['#0EA5E9', '#0284C7']} style={styles.statCard}>
           <Eye size={20} color="#FFFFFF" />
           <Text style={styles.statNumber}>{watchlist.length}</Text>
           <Text style={styles.statLabel}>Watching</Text>
         </LinearGradient>
-        
-        <LinearGradient
-          colors={['#8B5CF6', '#7C3AED']}
-          style={styles.statCard}
-        >
+
+        <LinearGradient colors={['#8B5CF6', '#7C3AED']} style={styles.statCard}>
           <Target size={20} color="#FFFFFF" />
           <Text style={styles.statNumber}>87%</Text>
           <Text style={styles.statLabel}>Win Rate</Text>
@@ -326,10 +333,7 @@ export default function AuctionsScreen() {
         ].map((tab) => (
           <TouchableOpacity
             key={tab.key}
-            style={[
-              styles.tab,
-              activeTab === tab.key && styles.activeTab,
-            ]}
+            style={[styles.tab, activeTab === tab.key && styles.activeTab]}
             onPress={() => setActiveTab(tab.key as any)}
           >
             <Text
@@ -340,14 +344,18 @@ export default function AuctionsScreen() {
             >
               {tab.label}
             </Text>
-            <View style={[
-              styles.tabBadge,
-              activeTab === tab.key && styles.activeTabBadge,
-            ]}>
-              <Text style={[
-                styles.tabBadgeText,
-                activeTab === tab.key && styles.activeTabBadgeText,
-              ]}>
+            <View
+              style={[
+                styles.tabBadge,
+                activeTab === tab.key && styles.activeTabBadge,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tabBadgeText,
+                  activeTab === tab.key && styles.activeTabBadgeText,
+                ]}
+              >
                 {tab.count}
               </Text>
             </View>
@@ -356,7 +364,11 @@ export default function AuctionsScreen() {
       </View>
 
       {/* Content */}
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollViewContent}
+        showsVerticalScrollIndicator={false}
+      >
         {renderContent()}
         <View style={styles.bottomPadding} />
       </ScrollView>
@@ -390,15 +402,16 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16, // Adjusted from 20 to 16 for better spacing with cards
     paddingVertical: 16,
+    gap: 8, // Added gap for spacing between stat cards
   },
   statCard: {
     flex: 1,
     alignItems: 'center',
     paddingVertical: 16,
     borderRadius: 12,
-    marginHorizontal: 4,
+    // Removed marginHorizontal as gap handles spacing
   },
   statNumber: {
     fontSize: 20,
@@ -415,7 +428,7 @@ const styles = StyleSheet.create({
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: '#FFFFFF',
-    marginHorizontal: 20,
+    marginHorizontal: 16, // Adjusted from 20 to 16 for consistency
     borderRadius: 12,
     padding: 4,
     marginBottom: 16,
@@ -425,7 +438,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
+    paddingVertical: 10, // Slightly reduced padding for a more compact look
     borderRadius: 8,
   },
   activeTab: {
@@ -442,11 +455,12 @@ const styles = StyleSheet.create({
   },
   tabBadge: {
     backgroundColor: '#E5E7EB',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 8,
-    minWidth: 20,
+    paddingHorizontal: 8, // Slightly increased horizontal padding
+    paddingVertical: 3, // Slightly increased vertical padding
+    borderRadius: 10, // Adjusted for a slightly more rounded look
+    minWidth: 24, // Increased minimum width for better appearance
     alignItems: 'center',
+    justifyContent: 'center', // Centered content within badge
   },
   activeTabBadge: {
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
@@ -462,8 +476,12 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
+  scrollViewContent: {
+    paddingHorizontal: 16, // Consistent padding for content within ScrollView
+    paddingBottom: 20, // Add some padding at the bottom of the scroll view content
+  },
   content: {
-    paddingHorizontal: 20,
+    // No horizontal padding needed here as it's handled by scrollViewContent
   },
   bidCard: {
     backgroundColor: '#FFFFFF',
@@ -537,6 +555,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 8, // Added margin top for separation from bid info
   },
   bidStats: {
     flexDirection: 'row',
@@ -552,13 +571,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    // Removed paddingHorizontal as it's handled by scrollViewContent
+    gap: 16, // Added gap for consistent spacing between cards
   },
   wonCard: {
-    width: (width - 52) / 2,
+    width: (width - 32 - 16) / 2, // (screen_width - 2*paddingHorizontal - gap) / 2
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 16, // Keep marginBottom for vertical spacing
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -615,13 +635,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    // Removed paddingHorizontal as it's handled by scrollViewContent
+    gap: 16, // Added gap for consistent spacing between cards
   },
   watchCard: {
-    width: (width - 52) / 2,
+    width: (width - 32 - 16) / 2, // (screen_width - 2*paddingHorizontal - gap) / 2
     backgroundColor: '#FFFFFF',
     borderRadius: 16,
-    marginBottom: 16,
+    marginBottom: 16, // Keep marginBottom for vertical spacing
     overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -668,6 +689,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 8, // Added margin top for separation
   },
   watchStats: {
     flexDirection: 'row',
@@ -680,6 +702,6 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   bottomPadding: {
-    height: 120,
+    height: 100, // Adjusted for a slightly smaller bottom padding
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -13,14 +13,14 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { 
-  Bell, 
-  TrendingUp, 
-  Plus, 
-  Star, 
-  Clock, 
-  Zap, 
-  Gift, 
+import {
+  Bell,
+  TrendingUp,
+  Plus,
+  Star,
+  Clock,
+  Zap,
+  Gift,
   Crown,
   Sparkles,
   Timer,
@@ -28,33 +28,29 @@ import {
   Heart,
   Users,
   Award,
-  Flame
+  Flame,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSpring,
-  withTiming,
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
   interpolate,
-  runOnJS
 } from 'react-native-reanimated';
 import ConnectsBalance from '@/components/ConnectsBalance';
 import CountdownTimer from '@/components/CountdownTimer';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
-// Demo auction data with premium items
 const featuredAuctions = [
   {
     id: '1',
     title: 'Vintage Rolex Submariner',
     description: 'Rare 1960s Rolex Submariner in pristine condition',
-    image: 'https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 15750,
     estimatedValue: { min: 18000, max: 25000 },
-    endTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours
+    endTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     rarity: 'legendary',
     isHot: true,
     isFeatured: true,
@@ -65,10 +61,11 @@ const featuredAuctions = [
     id: '2',
     title: 'Limited Edition Hermès Birkin',
     description: 'Exclusive crocodile leather Birkin bag with gold hardware',
-    image: 'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 28900,
     estimatedValue: { min: 35000, max: 45000 },
-    endTime: new Date(Date.now() + 45 * 60 * 1000), // 45 minutes
+    endTime: new Date(Date.now() + 45 * 60 * 1000),
     rarity: 'legendary',
     isHot: true,
     isFeatured: true,
@@ -79,10 +76,11 @@ const featuredAuctions = [
     id: '3',
     title: 'Rare Pokémon Card Collection',
     description: 'First edition holographic Charizard and complete base set',
-    image: 'https://images.pexels.com/photos/1337247/pexels-photo-1337247.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/1337247/pexels-photo-1337247.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 8750,
     estimatedValue: { min: 12000, max: 18000 },
-    endTime: new Date(Date.now() + 6 * 60 * 60 * 1000), // 6 hours
+    endTime: new Date(Date.now() + 6 * 60 * 60 * 1000),
     rarity: 'epic',
     isHot: false,
     isFeatured: true,
@@ -96,7 +94,8 @@ const hotAuctions = [
     id: '4',
     title: 'Vintage Gibson Les Paul',
     description: '1959 Gibson Les Paul Standard in sunburst finish',
-    image: 'https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 12500,
     endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
     rarity: 'epic',
@@ -107,7 +106,8 @@ const hotAuctions = [
     id: '5',
     title: 'Leica M6 Camera',
     description: 'Professional 35mm rangefinder camera with original lens',
-    image: 'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 3250,
     endTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
     rarity: 'rare',
@@ -118,7 +118,8 @@ const hotAuctions = [
     id: '6',
     title: 'Supreme Box Logo Hoodie',
     description: 'Deadstock Supreme x Louis Vuitton collaboration hoodie',
-    image: 'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 1850,
     endTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
     rarity: 'rare',
@@ -129,7 +130,8 @@ const hotAuctions = [
     id: '7',
     title: 'Vintage Omega Speedmaster',
     description: 'Moon landing commemorative edition with original box',
-    image: 'https://images.pexels.com/photos/277390/pexels-photo-277390.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/277390/pexels-photo-277390.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 6750,
     endTime: new Date(Date.now() + 5 * 60 * 60 * 1000),
     rarity: 'epic',
@@ -143,9 +145,10 @@ const endingSoon = [
     id: '8',
     title: 'Rare Wine Collection',
     description: 'Vintage Bordeaux collection from prestigious vineyard',
-    image: 'https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 4500,
-    endTime: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
+    endTime: new Date(Date.now() + 15 * 60 * 1000),
     rarity: 'rare',
     bidCount: 23,
   },
@@ -153,31 +156,27 @@ const endingSoon = [
     id: '9',
     title: 'Signed Basketball Jersey',
     description: 'Michael Jordan signed Chicago Bulls jersey with COA',
-    image: 'https://images.pexels.com/photos/1884574/pexels-photo-1884574.jpeg?auto=compress&cs=tinysrgb&w=800',
+    image:
+      'https://images.pexels.com/photos/1884574/pexels-photo-1884574.jpeg?auto=compress&cs=tinysrgb&w=800',
     currentBid: 2750,
-    endTime: new Date(Date.now() + 8 * 60 * 1000), // 8 minutes
+    endTime: new Date(Date.now() + 8 * 60 * 1000),
     rarity: 'epic',
     bidCount: 45,
   },
 ];
 
-const getRarityColor = (rarity: string) => {
+const getRarityGradient = (rarity: string): [string, string] => {
   switch (rarity) {
-    case 'legendary': return '#FFD700';
-    case 'epic': return '#9D4EDD';
-    case 'rare': return '#2196F3';
-    case 'uncommon': return '#4CAF50';
-    default: return '#9E9E9E';
-  }
-};
-
-const getRarityGradient = (rarity: string) => {
-  switch (rarity) {
-    case 'legendary': return ['#FFD700', '#FFA000'];
-    case 'epic': return ['#9D4EDD', '#7B2CBF'];
-    case 'rare': return ['#2196F3', '#1976D2'];
-    case 'uncommon': return ['#4CAF50', '#388E3C'];
-    default: return ['#9E9E9E', '#757575'];
+    case 'legendary':
+      return ['#FFD700', '#FFA000'];
+    case 'epic':
+      return ['#9D4EDD', '#7B2CBF'];
+    case 'rare':
+      return ['#2196F3', '#1976D2'];
+    case 'uncommon':
+      return ['#4CAF50', '#388E3C'];
+    default:
+      return ['#9E9E9E', '#757575'];
   }
 };
 
@@ -191,24 +190,27 @@ export default function HomeScreen() {
   const headerAnimatedStyle = useAnimatedStyle(() => {
     const opacity = interpolate(scrollY.value, [0, 100], [1, 0.9]);
     const translateY = interpolate(scrollY.value, [0, 100], [0, -10]);
-    
+
     return {
       opacity,
       transform: [{ translateY }],
     };
   });
 
+  const handleSeeAllPress = () => {
+    router.push('/(tabs)/auctions');
+  };
+
   const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate refresh
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise((resolve) => setTimeout(resolve, 1000));
     setRefreshing(false);
   };
 
   const toggleFavorite = (itemId: string) => {
-    setFavoriteItems(prev => 
-      prev.includes(itemId) 
-        ? prev.filter(id => id !== itemId)
+    setFavoriteItems((prev) =>
+      prev.includes(itemId)
+        ? prev.filter((id) => id !== itemId)
         : [...prev, itemId]
     );
   };
@@ -233,8 +235,7 @@ export default function HomeScreen() {
           colors={['transparent', 'rgba(0,0,0,0.8)']}
           style={styles.featuredGradient}
         />
-        
-        {/* Rarity Badge */}
+
         <LinearGradient
           colors={getRarityGradient(item.rarity)}
           style={styles.rarityBadge}
@@ -243,7 +244,6 @@ export default function HomeScreen() {
           <Text style={styles.rarityText}>{item.rarity.toUpperCase()}</Text>
         </LinearGradient>
 
-        {/* Hot Badge */}
         {item.isHot && (
           <View style={styles.hotBadge}>
             <Flame size={12} color="#FFFFFF" />
@@ -251,7 +251,6 @@ export default function HomeScreen() {
           </View>
         )}
 
-        {/* Favorite Button */}
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={() => toggleFavorite(item.id)}
@@ -263,7 +262,6 @@ export default function HomeScreen() {
           />
         </TouchableOpacity>
 
-        {/* Bottom Info */}
         <View style={styles.featuredInfo}>
           <Text style={styles.featuredTitle} numberOfLines={2}>
             {item.title}
@@ -290,23 +288,26 @@ export default function HomeScreen() {
     </TouchableOpacity>
   );
 
-  const HotAuctionCard = ({ item }: { item: any }) => (
+  // Modified HotAuctionCard to use a consistent size
+  const CompactAuctionCard = ({ item }: { item: any }) => (
     <TouchableOpacity
-      style={styles.hotCard}
+      style={styles.compactCard} // Use the new compactCard style
       onPress={() => handleProductPress(item.id)}
       activeOpacity={0.9}
     >
-      <View style={styles.hotImageContainer}>
-        <Image source={{ uri: item.image }} style={styles.hotImage} />
+      <View style={styles.compactImageContainer}>
+        <Image source={{ uri: item.image }} style={styles.compactImage} />
         <LinearGradient
           colors={getRarityGradient(item.rarity)}
-          style={styles.hotRarityBadge}
+          style={styles.compactRarityBadge}
         >
-          <Text style={styles.hotRarityText}>{item.rarity.charAt(0).toUpperCase()}</Text>
+          <Text style={styles.compactRarityText}>
+            {item.rarity.charAt(0).toUpperCase()}
+          </Text>
         </LinearGradient>
-        
+
         <TouchableOpacity
-          style={styles.hotFavoriteButton}
+          style={styles.compactFavoriteButton}
           onPress={() => toggleFavorite(item.id)}
         >
           <Heart
@@ -316,21 +317,21 @@ export default function HomeScreen() {
           />
         </TouchableOpacity>
       </View>
-      
-      <View style={styles.hotCardContent}>
-        <Text style={styles.hotTitle} numberOfLines={2}>
+
+      <View style={styles.compactCardContent}>
+        <Text style={styles.compactTitle} numberOfLines={2}>
           {item.title}
         </Text>
-        <View style={styles.hotBidInfo}>
-          <Text style={styles.hotBidAmount}>
-            {item.currentBid.toLocaleString()}
+        <View style={styles.compactBidInfo}>
+          <Text style={styles.compactBidAmount}>
+            {item.currentBid.toLocaleString()}{' '}
+            <Text style={styles.compactBidLabel}>Connects</Text>
           </Text>
-          <Text style={styles.hotBidLabel}>Connects</Text>
         </View>
-        <View style={styles.hotStats}>
-          <View style={styles.hotStatItem}>
+        <View style={styles.compactStats}>
+          <View style={styles.compactStatItem}>
             <TrendingUp size={10} color="#FF7F00" />
-            <Text style={styles.hotStatText}>{item.bidCount} bids</Text>
+            <Text style={styles.compactStatText}>{item.bidCount} bids</Text>
           </View>
           <CountdownTimer endTime={item.endTime} compact />
         </View>
@@ -340,9 +341,12 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      
-      {/* Header */}
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor="transparent"
+        translucent
+      />
+
       <Animated.View style={[styles.header, headerAnimatedStyle]}>
         <View style={styles.headerContent}>
           <View style={styles.headerLeft}>
@@ -352,17 +356,10 @@ export default function HomeScreen() {
             >
               <Text style={styles.logo}>V</Text>
             </LinearGradient>
-            <View>
-              <Text style={styles.welcomeText}>Welcome back</Text>
-              <Text style={styles.brandText}>Volyx Premium</Text>
-            </View>
           </View>
-          
+
           <View style={styles.headerRight}>
-            <ConnectsBalance
-              balance={2750}
-              onPress={handleConnectsPress}
-            />
+            <ConnectsBalance balance={2750} onPress={handleConnectsPress} />
             <TouchableOpacity style={styles.notificationButton}>
               <Bell size={20} color="#1A2B42" />
               <View style={styles.notificationBadge}>
@@ -384,7 +381,6 @@ export default function HomeScreen() {
         }}
         scrollEventThrottle={16}
       >
-        {/* Featured Auctions */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
@@ -397,10 +393,15 @@ export default function HomeScreen() {
               <Text style={styles.sectionTitle}>Curator's Choice</Text>
             </View>
             <TouchableOpacity style={styles.seeAllButton}>
-              <Text style={styles.seeAllText}>See All</Text>
+              <Text
+                style={styles.seeAllText}
+                onAccessibilityTap={handleSeeAllPress}
+              >
+                See All
+              </Text>
             </TouchableOpacity>
           </View>
-          
+
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -412,7 +413,6 @@ export default function HomeScreen() {
           </ScrollView>
         </View>
 
-        {/* Ending Soon */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
@@ -428,19 +428,18 @@ export default function HomeScreen() {
               <Text style={styles.urgentText}>URGENT</Text>
             </View>
           </View>
-          
+
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.endingSoonScroll}
+            contentContainerStyle={styles.compactHorizontalScroll} // New style for horizontal compact cards
           >
             {endingSoon.map((item) => (
-              <HotAuctionCard key={item.id} item={item} />
+              <CompactAuctionCard key={item.id} item={item} />
             ))}
           </ScrollView>
         </View>
 
-        {/* Hot Auctions Grid */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
@@ -453,15 +452,18 @@ export default function HomeScreen() {
               <Text style={styles.sectionTitle}>Trending Now</Text>
             </View>
           </View>
-          
-          <View style={styles.hotGrid}>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.compactHorizontalScroll} // New style for horizontal compact cards
+          >
             {hotAuctions.map((item) => (
-              <HotAuctionCard key={item.id} item={item} />
+              <CompactAuctionCard key={item.id} item={item} />
             ))}
-          </View>
+          </ScrollView>
         </View>
 
-        {/* Get More Connects CTA */}
         <View style={styles.section}>
           <LinearGradient
             colors={['#1A2B42', '#2D4A6B']}
@@ -489,7 +491,6 @@ export default function HomeScreen() {
           </LinearGradient>
         </View>
 
-        {/* Bottom Padding for Floating Tab Bar */}
         <View style={styles.bottomPadding} />
       </Animated.ScrollView>
     </View>
@@ -505,8 +506,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: '#FFFFFF',
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+    borderBottomWidth: 0,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    marginBottom: 16,
   },
   headerContent: {
     flexDirection: 'row',
@@ -518,15 +523,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 12,
   },
   logo: {
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
   },
@@ -536,7 +541,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
   },
   brandText: {
-    fontSize: 18,
+    fontSize: 19,
     fontFamily: 'Inter-Bold',
     color: '#1A2B42',
   },
@@ -547,12 +552,14 @@ const styles = StyleSheet.create({
   notificationButton: {
     position: 'relative',
     marginLeft: 16,
-    padding: 8,
+    padding: 10,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
   },
   notificationBadge: {
     position: 'absolute',
-    top: 4,
-    right: 4,
+    top: 6,
+    right: 6,
     backgroundColor: '#FF3B30',
     borderRadius: 8,
     minWidth: 16,
@@ -576,28 +583,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    marginBottom: 16,
+    marginBottom: 18,
   },
   sectionTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   sectionIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 8,
+    marginRight: 10,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: '#1A2B42',
   },
   seeAllButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   seeAllText: {
     fontSize: 14,
@@ -606,30 +613,30 @@ const styles = StyleSheet.create({
   },
   urgentBadge: {
     backgroundColor: '#FF3B30',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 14,
   },
   urgentText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
   },
   featuredScroll: {
-    paddingRight: 20,
+    // paddingHorizontal: 20,
   },
   featuredCard: {
-    width: width * 0.75,
-    height: 320,
-    marginRight: 16,
-    borderRadius: 20,
+    width: width * 0.78,
+    height: 330,
+    marginRight: 18,
+    borderRadius: 24,
     overflow: 'hidden',
     backgroundColor: '#FFFFFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 10,
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.18,
+    shadowRadius: 25,
+    elevation: 12,
   },
   featuredImageContainer: {
     flex: 1,
@@ -638,55 +645,56 @@ const styles = StyleSheet.create({
   featuredImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
   featuredGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: '60%',
+    height: '65%',
   },
   rarityBadge: {
     position: 'absolute',
-    top: 12,
-    left: 12,
+    top: 15,
+    left: 15,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
   },
   rarityText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
-    marginLeft: 4,
+    marginLeft: 5,
   },
   hotBadge: {
     position: 'absolute',
-    top: 12,
-    right: 50,
+    top: 15,
+    right: 60,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#FF3B30',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
   },
   hotText: {
-    fontSize: 10,
+    fontSize: 11,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
-    marginLeft: 4,
+    marginLeft: 5,
   },
   favoriteButton: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    top: 15,
+    right: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -695,178 +703,190 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 16,
+    padding: 20,
   },
   featuredTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   featuredStats: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 14,
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginRight: 16,
+    marginRight: 20,
   },
   statText: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Inter-Medium',
-    color: '#FFFFFF',
-    marginLeft: 4,
+    color: '#E0E0E0',
+    marginLeft: 5,
   },
   bidInfo: {
-    marginBottom: 8,
+    marginBottom: 10,
   },
   currentBidLabel: {
-    fontSize: 12,
+    fontSize: 13,
     fontFamily: 'Inter-Regular',
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: 'rgba(255, 255, 255, 0.7)',
   },
   currentBidAmount: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
   },
   timer: {
     alignSelf: 'flex-start',
+    marginTop: 5,
   },
-  endingSoonScroll: {
-    paddingHorizontal: 20,
-  },
-  hotGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-  },
-  hotCard: {
-    width: (width - 52) / 2,
+
+  // New styles for the CompactAuctionCard
+  compactCard: {
+    width: (width - 20) / 2, // Half width minus total padding for two items per row
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    marginBottom: 16,
+    borderRadius: 18,
+    marginBottom: 20,
+    marginHorizontal: 6, // Added margin for grid spacing
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.12,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  hotImageContainer: {
-    height: 120,
+  compactImageContainer: {
+    height: 140, // Retain image height
     position: 'relative',
   },
-  hotImage: {
+  compactImage: {
     width: '100%',
     height: '100%',
+    resizeMode: 'cover',
   },
-  hotRarityBadge: {
+  compactRarityBadge: {
     position: 'absolute',
-    top: 8,
-    left: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: 10,
+    left: 10,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  hotRarityText: {
-    fontSize: 10,
+  compactRarityText: {
+    fontSize: 11,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
   },
-  hotFavoriteButton: {
+  compactFavoriteButton: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    top: 10,
+    right: 10,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  hotCardContent: {
-    padding: 12,
+  compactCardContent: {
+    padding: 15,
   },
-  hotTitle: {
-    fontSize: 14,
+  compactTitle: {
+    fontSize: 15,
     fontFamily: 'Inter-SemiBold',
     color: '#1A2B42',
-    marginBottom: 8,
-    lineHeight: 18,
+    marginBottom: 10,
+    lineHeight: 20,
   },
-  hotBidInfo: {
-    marginBottom: 8,
+  compactBidInfo: {
+    marginBottom: 10,
   },
-  hotBidAmount: {
-    fontSize: 16,
+  compactBidAmount: {
+    fontSize: 17,
     fontFamily: 'Inter-Bold',
     color: '#FF7F00',
   },
-  hotBidLabel: {
+  compactBidLabel: {
     fontSize: 12,
     fontFamily: 'Inter-Regular',
     color: '#6B7280',
   },
-  hotStats: {
+  compactStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  hotStatItem: {
+  compactStatItem: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  hotStatText: {
-    fontSize: 10,
+  compactStatText: {
+    fontSize: 11,
     fontFamily: 'Inter-Medium',
     color: '#6B7280',
-    marginLeft: 4,
+    marginLeft: 5,
   },
+
+  compactHorizontalScroll: {
+    paddingHorizontal: 10, // Adjust padding for compact horizontal scroll
+  },
+  compactGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'flex-start', // Align items to the start for left-to-right filling
+    paddingHorizontal: 10, // Adjust padding for grid
+  },
+
   connectsCTA: {
     marginHorizontal: 20,
-    borderRadius: 20,
+    borderRadius: 24,
     overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 25,
+    elevation: 15,
   },
   ctaContent: {
-    padding: 24,
+    padding: 28,
     alignItems: 'center',
   },
   ctaTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontFamily: 'Inter-Bold',
     color: '#FFFFFF',
-    marginTop: 12,
-    marginBottom: 8,
+    marginTop: 15,
+    marginBottom: 10,
     textAlign: 'center',
   },
   ctaSubtitle: {
-    fontSize: 14,
+    fontSize: 15,
     fontFamily: 'Inter-Regular',
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginBottom: 20,
+    color: 'rgba(255, 255, 255, 0.85)',
+    marginBottom: 25,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   ctaButton: {
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
   },
   ctaButtonGradient: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingHorizontal: 28,
+    paddingVertical: 14,
   },
   ctaButtonText: {
-    fontSize: 16,
+    fontSize: 17,
     fontFamily: 'Inter-SemiBold',
     color: '#FFFFFF',
-    marginLeft: 8,
+    marginLeft: 10,
   },
   bottomPadding: {
     height: 120,

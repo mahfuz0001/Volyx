@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { auctionAPI, APIError } from '@/lib/api';
 import { SanityAuctionItem } from '@/lib/sanity';
-import { captureError } from '@/lib/sentry';
 
 interface UseAuctionsState {
   auctions: SanityAuctionItem[];
@@ -26,21 +25,22 @@ export function useAuctions() {
 
   const fetchAuctions = async (isRefresh = false) => {
     try {
-      setState(prev => ({ 
-        ...prev, 
-        loading: !isRefresh, 
+      setState((prev) => ({
+        ...prev,
+        loading: !isRefresh,
         refreshing: isRefresh,
-        error: null 
+        error: null,
       }));
 
-      const [allAuctions, hotAuctions, featuredAuctions, endingSoon] = await Promise.all([
-        auctionAPI.getAll(),
-        auctionAPI.getHot(),
-        auctionAPI.getFeatured(),
-        auctionAPI.getEndingSoon(),
-      ]);
+      const [allAuctions, hotAuctions, featuredAuctions, endingSoon] =
+        await Promise.all([
+          auctionAPI.getAll(),
+          auctionAPI.getHot(),
+          auctionAPI.getFeatured(),
+          auctionAPI.getEndingSoon(),
+        ]);
 
-      setState(prev => ({
+      setState((prev) => ({
         ...prev,
         auctions: allAuctions,
         hotAuctions,
@@ -50,18 +50,17 @@ export function useAuctions() {
         refreshing: false,
       }));
     } catch (error) {
-      const errorMessage = error instanceof APIError 
-        ? error.message 
-        : 'Failed to load curated auctions';
-      
-      setState(prev => ({
+      const errorMessage =
+        error instanceof APIError
+          ? error.message
+          : 'Failed to load curated auctions';
+
+      setState((prev) => ({
         ...prev,
         error: errorMessage,
         loading: false,
         refreshing: false,
       }));
-
-      captureError(error as Error, { context: 'useAuctions' });
     }
   };
 
@@ -93,13 +92,13 @@ export function useAuctionItem(id: string) {
   useEffect(() => {
     const fetchAuction = async () => {
       try {
-        setState(prev => ({ ...prev, loading: true, error: null }));
-        
+        setState((prev) => ({ ...prev, loading: true, error: null }));
+
         const [auction, bidHistory] = await Promise.all([
           auctionAPI.getById(id),
           auctionAPI.getBidHistory(id),
         ]);
-        
+
         setState({
           auction,
           bidHistory,
@@ -107,18 +106,17 @@ export function useAuctionItem(id: string) {
           error: null,
         });
       } catch (error) {
-        const errorMessage = error instanceof APIError 
-          ? error.message 
-          : 'Failed to load auction details';
-        
+        const errorMessage =
+          error instanceof APIError
+            ? error.message
+            : 'Failed to load auction details';
+
         setState({
           auction: null,
           bidHistory: [],
           loading: false,
           error: errorMessage,
         });
-
-        captureError(error as Error, { context: 'useAuctionItem', auctionId: id });
       }
     };
 

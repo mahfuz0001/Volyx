@@ -7,15 +7,12 @@ import {
   Inter_400Regular,
   Inter_500Medium,
   Inter_600SemiBold,
-  Inter_700Bold
+  Inter_700Bold,
 } from '@expo-google-fonts/inter';
 import * as SplashScreen from 'expo-splash-screen';
 import { AuthContext, useAuthProvider } from '@/hooks/useAuth';
-import { initSentry } from '@/lib/sentry';
 import ErrorBoundary from '@/components/ErrorBoundary';
-
-// Initialize Sentry
-initSentry();
+import { SafeAreaProvider } from 'react-native-safe-area-context'; // Import SafeAreaProvider
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
@@ -58,8 +55,11 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <AuthContext.Provider value={authProvider}>
-        <RootLayoutNav />
-        <StatusBar style="auto" />
+        {/* Wrap your main content with SafeAreaProvider */}
+        <SafeAreaProvider>
+          <RootLayoutNav />
+          <StatusBar style="dark" />
+        </SafeAreaProvider>
       </AuthContext.Provider>
     </ErrorBoundary>
   );

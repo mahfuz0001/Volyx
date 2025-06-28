@@ -1,10 +1,24 @@
-import { sanityClient, AUCTION_ITEMS_QUERY, HOT_AUCTIONS_QUERY, FEATURED_AUCTIONS_QUERY, ENDING_SOON_QUERY, CATEGORIES_QUERY, AUCTION_ITEM_BY_ID_QUERY, BID_HISTORY_QUERY } from './sanity';
-import { captureError, captureMessage } from './sentry';
+import {
+  sanityClient,
+  AUCTION_ITEMS_QUERY,
+  HOT_AUCTIONS_QUERY,
+  FEATURED_AUCTIONS_QUERY,
+  ENDING_SOON_QUERY,
+  CATEGORIES_QUERY,
+  AUCTION_ITEM_BY_ID_QUERY,
+  BID_HISTORY_QUERY,
+} from './sanity';
 import { z } from 'zod';
 
 // Enhanced rate limiting store with device fingerprinting
-const rateLimitStore = new Map<string, { count: number; resetTime: number; violations: number }>();
-const suspiciousActivityStore = new Map<string, { rapidBids: number; lastSecondBids: number; flagged: boolean }>();
+const rateLimitStore = new Map<
+  string,
+  { count: number; resetTime: number; violations: number }
+>();
+const suspiciousActivityStore = new Map<
+  string,
+  { rapidBids: number; lastSecondBids: number; flagged: boolean }
+>();
 
 // Enhanced rate limiting configuration
 const RATE_LIMITS = {
@@ -66,18 +80,25 @@ export const AuctionItemSchema = z.object({
 });
 
 // Enhanced rate limiting with behavioral analysis
-export function checkRateLimit(identifier: string, type: keyof typeof RATE_LIMITS = 'default'): boolean {
+export function checkRateLimit(
+  identifier: string,
+  type: keyof typeof RATE_LIMITS = 'default'
+): boolean {
   const limit = RATE_LIMITS[type];
   const now = Date.now();
   const key = `${type}:${identifier}`;
-  
+
   const current = rateLimitStore.get(key);
-  
+
   if (!current || now > current.resetTime) {
-    rateLimitStore.set(key, { count: 1, resetTime: now + limit.windowMs, violations: 0 });
+    rateLimitStore.set(key, {
+      count: 1,
+      resetTime: now + limit.windowMs,
+      violations: 0,
+    });
     return true;
   }
-  
+
   if (current.count >= limit.requests) {
     current.violations++;
     if (current.violations > 3) {
@@ -86,18 +107,27 @@ export function checkRateLimit(identifier: string, type: keyof typeof RATE_LIMIT
     }
     return false;
   }
-  
+
   current.count++;
   return true;
 }
 
 // Behavioral anomaly detection
-export function detectSuspiciousBidding(userId: string, auctionItemId: string, bidTime: number, auctionEndTime: number): boolean {
+export function detectSuspiciousBidding(
+  userId: string,
+  auctionItemId: string,
+  bidTime: number,
+  auctionEndTime: number
+): boolean {
   const key = `${userId}:${auctionItemId}`;
-  const activity = suspiciousActivityStore.get(key) || { rapidBids: 0, lastSecondBids: 0, flagged: false };
-  
+  const activity = suspiciousActivityStore.get(key) || {
+    rapidBids: 0,
+    lastSecondBids: 0,
+    flagged: false,
+  };
+
   const timeToEnd = auctionEndTime - bidTime;
-  
+
   // Check for last-second bidding (within 5 seconds)
   if (timeToEnd < 5000) {
     activity.lastSecondBids++;
@@ -106,11 +136,12 @@ export function detectSuspiciousBidding(userId: string, auctionItemId: string, b
       flagSuspiciousActivity(userId, 'excessive_last_second_bidding');
     }
   }
-  
+
   // Check for rapid bidding
-  const recentActivity = Array.from(suspiciousActivityStore.entries())
-    .filter(([k, v]) => k.startsWith(userId) && Date.now() - bidTime < 30000);
-  
+  const recentActivity = Array.from(suspiciousActivityStore.entries()).filter(
+    ([k, v]) => k.startsWith(userId) && Date.now() - bidTime < 30000
+  );
+
   if (recentActivity.length > 5) {
     activity.rapidBids++;
     if (activity.rapidBids > 2) {
@@ -118,13 +149,12 @@ export function detectSuspiciousBidding(userId: string, auctionItemId: string, b
       flagSuspiciousActivity(userId, 'rapid_fire_bidding');
     }
   }
-  
+
   suspiciousActivityStore.set(key, activity);
   return activity.flagged;
 }
 
 function flagSuspiciousActivity(identifier: string, reason: string) {
-  captureMessage(`Suspicious activity detected: ${reason} for ${identifier}`, 'warning');
   // In production, this would trigger admin notifications
 }
 
@@ -164,22 +194,19 @@ async function apiCall<T>(
     }
 
     const result = await operation();
-    captureMessage(`${operationName} completed successfully`, 'info');
     return result;
   } catch (error) {
-    const apiError = error instanceof APIError ? error : new APIError(
-      `${operationName} failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
-      500,
-      'INTERNAL_ERROR'
-    );
-    
-    captureError(apiError, {
-      operation: operationName,
-      userId,
-      deviceFingerprint,
-      timestamp: new Date().toISOString(),
-    });
-    
+    const apiError =
+      error instanceof APIError
+        ? error
+        : new APIError(
+            `${operationName} failed: ${
+              error instanceof Error ? error.message : 'Unknown error'
+            }`,
+            500,
+            'INTERNAL_ERROR'
+          );
+
     throw apiError;
   }
 }
@@ -230,17 +257,18 @@ export const auctionAPI = {
 
   async create(data: z.infer<typeof AuctionItemSchema>, userId: string) {
     const validatedData = AuctionItemSchema.parse(data);
-    
+
     return apiCall(
-      () => sanityClient.create({
-        _type: 'auctionItem',
-        ...validatedData,
-        currentBid: 0,
-        isActive: true,
-        createdBy: userId,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      }),
+      () =>
+        sanityClient.create({
+          _type: 'auctionItem',
+          ...validatedData,
+          currentBid: 0,
+          isActive: true,
+          createdBy: userId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        }),
       'createAuctionItem',
       userId
     );
@@ -248,7 +276,7 @@ export const auctionAPI = {
 
   async placeBid(data: z.infer<typeof BidSchema>) {
     const validatedData = BidSchema.parse(data);
-    
+
     // Enhanced rate limiting for bidding
     if (!checkRateLimit(validatedData.userId, 'bid')) {
       throw new APIError('Bid rate limit exceeded', 429, 'BID_RATE_LIMIT');
@@ -261,12 +289,16 @@ export const auctionAPI = {
     return apiCall(
       async () => {
         // Get current auction item
-        const auctionItem = await sanityClient.fetch(AUCTION_ITEM_BY_ID_QUERY, { 
-          id: validatedData.auctionItemId 
+        const auctionItem = await sanityClient.fetch(AUCTION_ITEM_BY_ID_QUERY, {
+          id: validatedData.auctionItemId,
         });
 
         if (!auctionItem) {
-          throw new APIError('Auction item not found', 404, 'AUCTION_NOT_FOUND');
+          throw new APIError(
+            'Auction item not found',
+            404,
+            'AUCTION_NOT_FOUND'
+          );
         }
 
         const auctionEndTime = new Date(auctionItem.endTime).getTime();
@@ -278,15 +310,30 @@ export const auctionAPI = {
         }
 
         // Behavioral analysis
-        if (detectSuspiciousBidding(validatedData.userId, validatedData.auctionItemId, now, auctionEndTime)) {
-          throw new APIError('Suspicious bidding pattern detected', 403, 'SUSPICIOUS_ACTIVITY');
+        if (
+          detectSuspiciousBidding(
+            validatedData.userId,
+            validatedData.auctionItemId,
+            now,
+            auctionEndTime
+          )
+        ) {
+          throw new APIError(
+            'Suspicious bidding pattern detected',
+            403,
+            'SUSPICIOUS_ACTIVITY'
+          );
         }
 
         const requiredIncrement = calculateBidIncrement(auctionItem.currentBid);
         const minimumBid = auctionItem.currentBid + requiredIncrement;
 
         if (validatedData.amount < minimumBid) {
-          throw new APIError(`Bid must be at least ${minimumBid} Connects`, 400, 'INVALID_BID_AMOUNT');
+          throw new APIError(
+            `Bid must be at least ${minimumBid} Connects`,
+            400,
+            'INVALID_BID_AMOUNT'
+          );
         }
 
         // Handle overtime/soft close (extend auction by 2 minutes if bid placed in last 30 seconds)
@@ -298,10 +345,10 @@ export const auctionAPI = {
         // Update auction item with new bid
         await sanityClient
           .patch(validatedData.auctionItemId)
-          .set({ 
+          .set({
             currentBid: validatedData.amount,
             endTime: newEndTime,
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
           })
           .commit();
 
@@ -332,7 +379,7 @@ export const auctionAPI = {
 
   async setProxyBid(data: z.infer<typeof ProxyBidSchema>) {
     const validatedData = ProxyBidSchema.parse(data);
-    
+
     return apiCall(
       async () => {
         // Implementation for proxy bidding system
@@ -370,7 +417,9 @@ export const categoriesAPI = {
 
   async getByCategory(categoryId: string) {
     return apiCall(
-      () => sanityClient.fetch(`
+      () =>
+        sanityClient.fetch(
+          `
         *[_type == "auctionItem" && isActive == true && category._ref == $categoryId] | order(endTime asc) {
           _id,
           title,
@@ -387,7 +436,9 @@ export const categoriesAPI = {
           createdAt,
           updatedAt
         }
-      `, { categoryId }),
+      `,
+          { categoryId }
+        ),
       'fetchAuctionsByCategory'
     );
   },
@@ -397,45 +448,59 @@ export const categoriesAPI = {
 export const usersAPI = {
   async create(data: z.infer<typeof UserSchema>) {
     const validatedData = UserSchema.parse(data);
-    
+
     return apiCall(
-      () => sanityClient.create({
-        _type: 'user',
-        ...validatedData,
-        connectsBalance: 100, // Starting balance
-        isAdmin: false,
-        isCurator: false,
-        trustScore: 100,
-        bidHistory: [],
-        watchlist: [],
-        notificationPreferences: {
-          outbid: true,
-          endingSoon: true,
-          newAuctions: false,
-          connects: true,
-          wonItems: true,
-        },
-        createdAt: new Date().toISOString(),
-      }),
+      () =>
+        sanityClient.create({
+          _type: 'user',
+          ...validatedData,
+          connectsBalance: 100, // Starting balance
+          isAdmin: false,
+          isCurator: false,
+          trustScore: 100,
+          bidHistory: [],
+          watchlist: [],
+          notificationPreferences: {
+            outbid: true,
+            endingSoon: true,
+            newAuctions: false,
+            connects: true,
+            wonItems: true,
+          },
+          createdAt: new Date().toISOString(),
+        }),
       'createUser'
     );
   },
 
-  async updateConnects(userId: string, amount: number, type: 'add' | 'subtract', reason: string) {
+  async updateConnects(
+    userId: string,
+    amount: number,
+    type: 'add' | 'subtract',
+    reason: string
+  ) {
     return apiCall(
       async () => {
-        const user = await sanityClient.fetch(`*[_type == "user" && _id == $userId][0]`, { userId });
-        
+        const user = await sanityClient.fetch(
+          `*[_type == "user" && _id == $userId][0]`,
+          { userId }
+        );
+
         if (!user) {
           throw new APIError('User not found', 404, 'USER_NOT_FOUND');
         }
 
-        const newBalance = type === 'add' 
-          ? user.connectsBalance + amount 
-          : user.connectsBalance - amount;
+        const newBalance =
+          type === 'add'
+            ? user.connectsBalance + amount
+            : user.connectsBalance - amount;
 
         if (newBalance < 0) {
-          throw new APIError('Insufficient connects', 400, 'INSUFFICIENT_CONNECTS');
+          throw new APIError(
+            'Insufficient connects',
+            400,
+            'INSUFFICIENT_CONNECTS'
+          );
         }
 
         // Update user balance
@@ -465,27 +530,47 @@ export const usersAPI = {
   async watchVideo(userId: string, deviceFingerprint: string) {
     // Check daily video limit
     if (!checkRateLimit(`${userId}:${deviceFingerprint}`, 'videoWatch')) {
-      throw new APIError('Daily video limit reached', 429, 'VIDEO_LIMIT_EXCEEDED');
+      throw new APIError(
+        'Daily video limit reached',
+        429,
+        'VIDEO_LIMIT_EXCEEDED'
+      );
     }
 
     const connectsEarned = 10; // Base amount, could be dynamic
-    
+
     return apiCall(
-      () => this.updateConnects(userId, connectsEarned, 'add', 'Watched video advertisement'),
+      () =>
+        this.updateConnects(
+          userId,
+          connectsEarned,
+          'add',
+          'Watched video advertisement'
+        ),
       'watchVideo',
       userId,
       deviceFingerprint
     );
   },
 
-  async purchaseConnects(userId: string, packageId: string, amount: number, bonus: number) {
+  async purchaseConnects(
+    userId: string,
+    packageId: string,
+    amount: number,
+    bonus: number
+  ) {
     const totalConnects = amount + bonus;
-    
+
     return apiCall(
       async () => {
         // In production, this would integrate with payment processing
-        await this.updateConnects(userId, totalConnects, 'add', `Purchased ${amount} + ${bonus} bonus Connects`);
-        
+        await this.updateConnects(
+          userId,
+          totalConnects,
+          'add',
+          `Purchased ${amount} + ${bonus} bonus Connects`
+        );
+
         // Create purchase record
         return sanityClient.create({
           _type: 'connectsPurchase',
@@ -509,29 +594,30 @@ export const usersAPI = {
 // Analytics API for admin dashboard
 export const analyticsAPI = {
   async getDashboardStats() {
-    return apiCall(
-      async () => {
-        const [totalUsers, activeAuctions, totalBids, totalRevenue] = await Promise.all([
+    return apiCall(async () => {
+      const [totalUsers, activeAuctions, totalBids, totalRevenue] =
+        await Promise.all([
           sanityClient.fetch(`count(*[_type == "user"])`),
-          sanityClient.fetch(`count(*[_type == "auctionItem" && isActive == true])`),
+          sanityClient.fetch(
+            `count(*[_type == "auctionItem" && isActive == true])`
+          ),
           sanityClient.fetch(`count(*[_type == "bid"])`),
           sanityClient.fetch(`count(*[_type == "connectsPurchase"])`),
         ]);
 
-        return {
-          totalUsers,
-          activeAuctions,
-          totalBids,
-          revenue: totalRevenue * 4.99, // Mock calculation
-        };
-      },
-      'fetchDashboardStats'
-    );
+      return {
+        totalUsers,
+        activeAuctions,
+        totalBids,
+        revenue: totalRevenue * 4.99, // Mock calculation
+      };
+    }, 'fetchDashboardStats');
   },
 
   async getAuctionPerformance() {
     return apiCall(
-      () => sanityClient.fetch(`
+      () =>
+        sanityClient.fetch(`
         *[_type == "auctionItem"] {
           _id,
           title,

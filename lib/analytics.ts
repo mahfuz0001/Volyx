@@ -1,5 +1,4 @@
 import { config } from './config';
-import { captureMessage } from './sentry';
 
 interface AnalyticsEvent {
   name: string;
@@ -25,7 +24,7 @@ class AnalyticsService {
     try {
       // Initialize analytics services here
       // Example: Mixpanel, Google Analytics, etc.
-      
+
       if (config.analytics.mixpanelToken) {
         // Initialize Mixpanel
         console.log('Analytics initialized with Mixpanel');
@@ -54,9 +53,6 @@ class AnalyticsService {
       // Example implementations:
       // mixpanel.track(event.name, event.properties);
       // gtag('event', event.name, event.properties);
-
-      // Also send to Sentry for debugging
-      captureMessage(`Analytics: ${event.name}`, 'info');
     } catch (error) {
       console.error('Failed to track event:', error);
     }
@@ -102,7 +98,11 @@ class AnalyticsService {
     });
   }
 
-  async trackAuctionViewed(auctionId: string, auctionTitle: string, userId?: string) {
+  async trackAuctionViewed(
+    auctionId: string,
+    auctionTitle: string,
+    userId?: string
+  ) {
     await this.trackEvent({
       name: 'auction_viewed',
       properties: {
@@ -170,7 +170,11 @@ class AnalyticsService {
     });
   }
 
-  async trackSearchPerformed(query: string, resultsCount: number, userId?: string) {
+  async trackSearchPerformed(
+    query: string,
+    resultsCount: number,
+    userId?: string
+  ) {
     await this.trackEvent({
       name: 'search_performed',
       properties: {

@@ -5,15 +5,16 @@ A modern, production-ready auction platform built with React Native, Expo, Sanit
 ## 🚀 Features
 
 ### Core Functionality
+
 - **Real-time Auctions**: Live bidding with countdown timers
 - **Sanity CMS Integration**: Content management for auction items
 - **User Authentication**: Secure login with admin roles
 - **Connects System**: Virtual currency for bidding
 - **Rate Limiting**: API protection against abuse
 - **Error Handling**: Comprehensive error boundaries and user feedback
-- **Performance Monitoring**: Sentry integration for error tracking
 
 ### Modern UI/UX
+
 - **GSAP Animations**: Smooth, professional animations
 - **Responsive Design**: Optimized for all screen sizes
 - **Modern Typography**: Inter font family implementation
@@ -22,6 +23,7 @@ A modern, production-ready auction platform built with React Native, Expo, Sanit
 - **Error States**: User-friendly error messages
 
 ### Admin Features
+
 - **Admin Dashboard**: Complete platform management
 - **Product Management**: Add and manage auction items
 - **User Analytics**: Real-time statistics and insights
@@ -32,7 +34,6 @@ A modern, production-ready auction platform built with React Native, Expo, Sanit
 - **Frontend**: React Native with Expo
 - **Database**: NeonDB with Drizzle ORM
 - **CMS**: Sanity for content management
-- **Monitoring**: Sentry for error tracking
 - **Animations**: GSAP and React Native Reanimated
 - **Validation**: Zod for type-safe validation
 - **TypeScript**: Full type safety
@@ -40,27 +41,30 @@ A modern, production-ready auction platform built with React Native, Expo, Sanit
 ## 📦 Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd volyx-auction-app
    ```
 
 2. **Install dependencies**
+
    ```bash
    npm install
    ```
 
 3. **Environment Setup**
    Copy `.env.example` to `.env` and fill in your credentials:
+
    ```env
    EXPO_PUBLIC_DATABASE_URL=your_neon_database_url
    EXPO_PUBLIC_SANITY_PROJECT_ID=your_sanity_project_id
    EXPO_PUBLIC_SANITY_DATASET=production
    EXPO_PUBLIC_SANITY_TOKEN=your_sanity_token
-   EXPO_PUBLIC_SENTRY_DSN=your_sentry_dsn
    ```
 
 4. **Database Setup**
+
    ```bash
    npm run db:generate
    npm run db:migrate
@@ -74,6 +78,7 @@ A modern, production-ready auction platform built with React Native, Expo, Sanit
 ## 🏗 Sanity CMS Setup
 
 1. **Create a Sanity project**
+
    ```bash
    npm create sanity@latest
    ```
@@ -90,23 +95,26 @@ A modern, production-ready auction platform built with React Native, Expo, Sanit
 ## 🔐 Admin Access
 
 To access admin features, log in with:
+
 - **Email**: admin@example.com
 - **Password**: Any password (demo mode)
 
 ## 🎯 Key Features Explained
 
 ### Rate Limiting
+
 - **Default**: 100 requests per 15 minutes
 - **Bidding**: 10 bids per minute
 - **Authentication**: 5 attempts per 15 minutes
 
 ### Error Handling
+
 - **API Errors**: Structured error responses with codes
 - **UI Errors**: User-friendly error messages
 - **Error Boundaries**: Graceful error recovery
-- **Sentry Integration**: Automatic error reporting
 
 ### Performance
+
 - **Optimized Images**: Sanity image optimization
 - **Lazy Loading**: Efficient component loading
 - **Caching**: Smart data caching strategies
@@ -115,12 +123,14 @@ To access admin features, log in with:
 ## 🔔 Notifications
 
 ### Push Notifications
+
 - **Outbid Alerts**: Instant notifications when outbid
 - **Ending Soon**: Reminders for auctions ending
 - **Won Items**: Congratulations for successful bids
 - **Connects Earned**: Updates on earned currency
 
 ### Setup
+
 1. Configure Firebase for push notifications
 2. Add your FCM server key to environment variables
 3. Test notifications in development mode
@@ -128,12 +138,14 @@ To access admin features, log in with:
 ## 💰 Payments
 
 ### Connects Packages
+
 - **Starter**: 100 Connects for $0.99
 - **Popular**: 500 + 50 bonus for $4.99
 - **Best Value**: 1000 + 200 bonus for $9.99
 - **Premium**: 2500 + 750 bonus for $19.99
 
 ### Payment Processing
+
 - Stripe integration for secure payments
 - Server-side validation for all transactions
 - Automatic connects balance updates
@@ -141,25 +153,29 @@ To access admin features, log in with:
 ## 📊 Analytics
 
 ### Tracking Events
+
 - User registration and login
 - Auction views and bids
 - Connects purchases and usage
 - App engagement metrics
 
 ### Services Supported
+
 - Mixpanel for detailed user analytics
 - Google Analytics for web tracking
-- Sentry for error and performance monitoring
 
 ## 🚀 Deployment
 
 ### Web Deployment
+
 ```bash
 npm run build:web
 ```
 
 ### Mobile Deployment
+
 1. **Build for iOS/Android**
+
    ```bash
    eas build --platform all
    ```
@@ -178,12 +194,15 @@ npm run build:web
 ## 🔧 Development
 
 ### Environment Variables
+
 Create environment files for different stages:
+
 - `.env` - Development defaults
-- `.env.staging` - Staging environment  
+- `.env.staging` - Staging environment
 - `.env.production` - Production environment
 
 ### Code Structure
+
 ```
 app/                 # Expo Router pages
 ├── (tabs)/         # Tab navigation
@@ -199,7 +218,6 @@ components/         # Reusable components
 lib/               # Core utilities
 ├── api.ts         # API functions
 ├── sanity.ts      # Sanity client
-├── sentry.ts      # Error monitoring
 ├── config.ts      # Environment config
 ├── notifications.ts # Push notifications
 ├── analytics.ts   # Analytics tracking
@@ -212,6 +230,7 @@ hooks/             # Custom hooks
 ```
 
 ### Best Practices
+
 - **Type Safety**: Full TypeScript coverage
 - **Error Handling**: Comprehensive error management
 - **Performance**: Optimized for mobile and web
@@ -233,9 +252,9 @@ This project is licensed under the MIT License.
 ## 🆘 Support
 
 For support and questions:
+
 - Create an issue on GitHub
 - Check the documentation
-- Review error logs in Sentry
 
 ---
 

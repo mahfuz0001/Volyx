@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "Volyx - Premium Auctions",
-    "slug": "volyx-auction-app",
+    "name": "Volyx",
+    "slug": "volyx",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -18,6 +18,9 @@
     },
     "android": {
       "package": "com.volyx.auction",
+      "edgeToEdgeEnabled": true,
+      "versionCode": 1,
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/icon.png",
         "backgroundColor": "#1e40af"
@@ -43,7 +46,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/notification-icon.png",
+          "icon": "./assets/images/icon.png",
           "color": "#1e40af",
           "sounds": ["./assets/sounds/notification.wav"]
         }
@@ -55,11 +58,12 @@
         }
       ],
       [
-        "@sentry/react-native/expo",
+        "react-native-edge-to-edge",
         {
-          "url": "https://sentry.io/",
-          "project": "volyx-auction-app",
-          "organization": "volyx"
+          "android": {
+            "parentTheme": "Default",
+            "enforceNavigationBarContrast": false
+          }
         }
       ]
     ],

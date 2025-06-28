@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "963990540292",
+    "project_id": "volyx-4c976",
+    "storage_bucket": "volyx-4c976.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:963990540292:android:62136d5e09484ebdbe6551",
+        "android_client_info": {
+          "package_name": "com.volyx.auction"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAVy7rYj2BQHKGq7v5CFl4uV36ohAf4pOg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

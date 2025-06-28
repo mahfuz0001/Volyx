@@ -3,25 +3,45 @@ import {
   View,
   Text,
   StyleSheet,
-  SafeAreaView,
   ScrollView,
   TouchableOpacity,
   Switch,
   Image,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { User, Settings, Bell, Circle as HelpCircle, LogOut, Trophy, Gavel, Coins, Calendar, ChevronRight, Eye, Heart, History, FileText, CircleUser as UserCircle, Shield } from 'lucide-react-native';
+import {
+  User,
+  Settings,
+  Bell,
+  Circle as HelpCircle,
+  LogOut,
+  Trophy,
+  Gavel,
+  Coins,
+  Calendar,
+  ChevronRight,
+  Eye,
+  Heart,
+  History,
+  FileText,
+  CircleUser as UserCircle,
+  Shield,
+} from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import AnimatedCard from '@/components/AnimatedCard';
 import ConnectsBalance from '@/components/ConnectsBalance';
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // Import useSafeAreaInsets
 import {
   mockUserData,
   mockWonItems,
-  mockConnectsTransactions,
+  mockConnectsTransactions, // Retained for completeness, though not directly used in the current render
 } from '@/data/mockData';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets(); // Get safe area insets
+
   const [notifications, setNotifications] = useState({
     outbid: true,
     ending: true,
@@ -37,6 +57,7 @@ export default function ProfileScreen() {
     });
   };
 
+  // Retained for completeness, not actively used in this UI version
   const formatTransactionAmount = (amount: number, type: string) => {
     const sign = type === 'spent' ? '-' : '+';
     const color = type === 'spent' ? '#ef4444' : '#16a34a';
@@ -44,36 +65,51 @@ export default function ProfileScreen() {
   };
 
   const handleLogout = () => {
-    // In a real app, this would clear auth state
+    // In a real app, this would clear auth state (e.g., using context or storage)
+    // and then navigate.
+    // For now, it just navigates back to the auth screen.
     router.replace('/auth');
   };
 
-  const MenuSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
+  const MenuSection = ({
+    title,
+    children,
+  }: {
+    title: string;
+    children: React.ReactNode;
+  }) => (
     <AnimatedCard style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      {title ? <Text style={styles.sectionTitle}>{title}</Text> : null}
       {children}
     </AnimatedCard>
   );
 
-  const MenuItem = ({ 
-    icon: IconComponent, 
-    title, 
-    subtitle, 
-    onPress, 
+  const MenuItem = ({
+    icon: IconComponent,
+    title,
+    subtitle,
+    onPress,
     showChevron = true,
-    danger = false 
+    danger = false,
+    hasSwitch = false,
+    switchValue,
+    onSwitchChange,
   }: {
     icon: any;
     title: string;
     subtitle?: string;
-    onPress: () => void;
+    onPress?: () => void; // Made optional for items with switch
     showChevron?: boolean;
     danger?: boolean;
+    hasSwitch?: boolean;
+    switchValue?: boolean;
+    onSwitchChange?: (value: boolean) => void;
   }) => (
-    <TouchableOpacity 
-      style={styles.menuItem} 
-      onPress={onPress}
-      activeOpacity={0.7}
+    <TouchableOpacity
+      style={styles.menuItem}
+      onPress={onPress || (() => {})} // Provide empty function if no onPress for switch items
+      activeOpacity={hasSwitch ? 1 : 0.7} // Disable activeOpacity for switch items
+      disabled={hasSwitch} // Disable touch feedback on the whole row if it has a switch
     >
       <View style={[styles.menuIcon, danger && styles.menuIconDanger]}>
         <IconComponent size={20} color={danger ? '#EF4444' : '#6B7280'} />
@@ -82,19 +118,28 @@ export default function ProfileScreen() {
         <Text style={[styles.menuTitle, danger && styles.menuTitleDanger]}>
           {title}
         </Text>
-        {subtitle && (
-          <Text style={styles.menuSubtitle}>{subtitle}</Text>
-        )}
+        {subtitle && <Text style={styles.menuSubtitle}>{subtitle}</Text>}
       </View>
-      {showChevron && (
-        <ChevronRight size={16} color="#9CA3AF" />
+      {hasSwitch ? (
+        <Switch
+          trackColor={{ false: '#E5E7EB', true: '#FF7F00' }}
+          thumbColor={'#FFFFFF'}
+          ios_backgroundColor="#E5E7EB"
+          onValueChange={onSwitchChange}
+          value={switchValue}
+        />
+      ) : (
+        showChevron && <ChevronRight size={16} color="#9CA3AF" />
       )}
     </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollViewContent}
+      >
         {/* Profile Header */}
         <AnimatedCard delay={100} style={styles.profileHeader}>
           <LinearGradient
@@ -121,7 +166,7 @@ export default function ProfileScreen() {
                 </View>
               </View>
             </View>
-            
+
             <ConnectsBalance
               balance={mockUserData.connectsBalance}
               onPress={() => router.push('/get-connects')}
@@ -160,20 +205,62 @@ export default function ProfileScreen() {
             onPress={() => router.push('/user-profile')}
           />
           <MenuItem
-            icon={Bell}
-            title="Notifications"
-            subtitle="Manage your notification preferences"
-            onPress={() => router.push('/notifications')}
-          />
-          <MenuItem
             icon={Settings}
-            title="Settings"
-            subtitle="App preferences and privacy"
+            title="App Settings"
+            subtitle="Preferences and privacy"
             onPress={() => router.push('/settings')}
           />
         </MenuSection>
 
-        {/* Activity */}
+        {/* Notifications */}
+        <MenuSection title="Notifications">
+          <MenuItem
+            icon={Bell}
+            title="Outbid Alerts"
+            subtitle="Receive a notification when you're outbid"
+            hasSwitch={true}
+            switchValue={notifications.outbid}
+            onSwitchChange={(value) =>
+              setNotifications((prev) => ({ ...prev, outbid: value }))
+            }
+            showChevron={false}
+          />
+          <MenuItem
+            icon={Bell}
+            title="Ending Soon Alerts"
+            subtitle="Get reminded when auctions are about to end"
+            hasSwitch={true}
+            switchValue={notifications.ending}
+            onSwitchChange={(value) =>
+              setNotifications((prev) => ({ ...prev, ending: value }))
+            }
+            showChevron={false}
+          />
+          <MenuItem
+            icon={Bell}
+            title="New Auctions"
+            subtitle="Stay updated on new listings in your interests"
+            hasSwitch={true}
+            switchValue={notifications.newAuctions}
+            onSwitchChange={(value) =>
+              setNotifications((prev) => ({ ...prev, newAuctions: value }))
+            }
+            showChevron={false}
+          />
+          <MenuItem
+            icon={Coins} // Using Coins for Connects related notifications
+            title="Connects Balance Alerts"
+            subtitle="Receive alerts for Connects transactions"
+            hasSwitch={true}
+            switchValue={notifications.connects}
+            onSwitchChange={(value) =>
+              setNotifications((prev) => ({ ...prev, connects: value }))
+            }
+            showChevron={false}
+          />
+        </MenuSection>
+
+        {/* My Activity */}
         <MenuSection title="My Activity">
           <MenuItem
             icon={History}
@@ -193,6 +280,10 @@ export default function ProfileScreen() {
             subtitle="Items you've looked at"
             onPress={() => {
               // Navigate to recently viewed items
+              Alert.alert(
+                'Coming Soon',
+                'Recently Viewed feature is under development!'
+              );
             }}
           />
         </MenuSection>
@@ -202,8 +293,15 @@ export default function ProfileScreen() {
           {mockWonItems.length > 0 ? (
             <View style={styles.wonItemsList}>
               {mockWonItems.map((item) => (
-                <View key={item.id} style={styles.wonItem}>
-                  <Image source={{ uri: item.image }} style={styles.wonItemImage} />
+                <TouchableOpacity
+                  key={item.id}
+                  style={styles.wonItem}
+                  onPress={() => router.push(`/product-detail?id=${item.id}`)} // Navigate to product detail
+                >
+                  <Image
+                    source={{ uri: item.image }}
+                    style={styles.wonItemImage}
+                  />
                   <View style={styles.wonItemInfo}>
                     <Text style={styles.wonItemTitle}>{item.title}</Text>
                     <Text style={styles.wonItemBid}>
@@ -214,9 +312,17 @@ export default function ProfileScreen() {
                     </Text>
                   </View>
                   <ChevronRight size={16} color="#9ca3af" />
-                </View>
+                </TouchableOpacity>
               ))}
-              <TouchableOpacity style={styles.viewAllButton}>
+              <TouchableOpacity
+                style={styles.viewAllButton}
+                onPress={() => {
+                  Alert.alert(
+                    'Coming Soon',
+                    'View All Won Items feature is under development!'
+                  );
+                }}
+              >
                 <Text style={styles.viewAllText}>View All Won Items</Text>
                 <ChevronRight size={16} color="#1e40af" />
               </TouchableOpacity>
@@ -257,10 +363,10 @@ export default function ProfileScreen() {
           />
         </MenuSection>
 
-        {/* Bottom Padding */}
-        <View style={styles.bottomPadding} />
+        {/* Bottom Padding for ScrollView */}
+        <View style={{ height: insets.bottom + 20 }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -268,9 +374,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
+    // paddingTop handled by useSafeAreaInsets directly on the View
+  },
+  scrollViewContent: {
+    paddingBottom: 100, // General padding at the bottom of the scroll view
   },
   profileHeader: {
-    margin: 20,
+    marginHorizontal: 16, // Adjusted margin
+    marginTop: 20, // Added top margin for consistency
     marginBottom: 16,
     borderRadius: 20,
     overflow: 'hidden',
@@ -338,16 +449,21 @@ const styles = StyleSheet.create({
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginHorizontal: 20,
+    marginHorizontal: 16, // Adjusted margin
     marginBottom: 16,
     padding: 16,
     backgroundColor: '#ffffff',
     borderRadius: 16,
+    shadowColor: '#000', // Added subtle shadow for depth
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   statCard: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 10, // Adjusted padding
   },
   statNumber: {
     fontSize: 20,
@@ -364,25 +480,36 @@ const styles = StyleSheet.create({
   },
   section: {
     backgroundColor: '#ffffff',
-    marginHorizontal: 20,
+    marginHorizontal: 16, // Adjusted margin
     marginBottom: 16,
-    paddingVertical: 20,
+    paddingTop: 20, // Adjusted padding
+    paddingBottom: 8, // Adjusted padding for list items to have space
     paddingHorizontal: 16,
     borderRadius: 16,
+    shadowColor: '#000', // Added subtle shadow
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 3,
   },
   sectionTitle: {
     fontSize: 18,
     fontFamily: 'Inter-SemiBold',
     color: '#111827',
-    marginBottom: 16,
+    marginBottom: 16, // Standardized margin
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
+    paddingVertical: 14, // Adjusted padding for menu items
     borderBottomWidth: 1,
     borderBottomColor: '#f3f4f6',
   },
+  // Remove the last border for the last item in a section
+  // This requires dynamic styling or a separate component for the last item
+  // For simplicity, I'll just adjust the padding on the section itself.
+  // The current `borderBottomWidth` will leave a line, which is often acceptable.
+
   menuIcon: {
     width: 40,
     height: 40,
@@ -408,12 +535,13 @@ const styles = StyleSheet.create({
     color: '#EF4444',
   },
   menuSubtitle: {
-    fontSize: 14,
+    fontSize: 13, // Slightly smaller subtitle font
     fontFamily: 'Inter-Regular',
     color: '#6b7280',
   },
   wonItemsList: {
-    gap: 12,
+    gap: 12, // Consistent gap for items within the list
+    paddingBottom: 12, // Padding at the bottom of the list before 'View All'
   },
   wonItem: {
     flexDirection: 'row',
@@ -453,6 +581,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 12,
     marginTop: 8,
+    borderTopWidth: 1, // Add a subtle separator
+    borderTopColor: '#f3f4f6',
   },
   viewAllText: {
     fontSize: 14,
@@ -470,7 +600,5 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     marginTop: 8,
   },
-  bottomPadding: {
-    height: 120,
-  },
+  // Removed bottomPadding as it's handled by scrollViewContent and insets.bottom
 });

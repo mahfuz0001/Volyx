@@ -1,6 +1,5 @@
 import { config } from './config';
 import { analytics } from './analytics';
-import { captureError, captureMessage } from './sentry';
 
 export interface ConnectsPackage {
   id: string;
@@ -66,15 +65,17 @@ class PaymentService {
       this.isInitialized = true;
     } catch (error) {
       console.error('Payment service initialization failed:', error);
-      captureError(error as Error, { context: 'payment_initialization' });
     }
   }
 
-  async purchaseConnects(packageId: string, userId: string): Promise<{ success: boolean; error?: string }> {
+  async purchaseConnects(
+    packageId: string,
+    userId: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       await this.initialize();
 
-      const package_ = connectsPackages.find(p => p.id === packageId);
+      const package_ = connectsPackages.find((p) => p.id === packageId);
       if (!package_) {
         throw new Error('Invalid package selected');
       }
@@ -89,37 +90,42 @@ class PaymentService {
       const totalConnects = package_.amount + package_.bonus;
 
       // Track the purchase
-      await analytics.trackConnectsPurchased(totalConnects, package_.price, userId);
+      await analytics.trackConnectsPurchased(
+        totalConnects,
+        package_.price,
+        userId
+      );
 
       // Log successful purchase
-      captureMessage(`Connects purchased: ${totalConnects} for $${package_.price}`, 'info');
 
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment failed';
-      captureError(error as Error, { 
-        context: 'connects_purchase', 
-        packageId, 
-        userId 
-      });
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Payment failed';
+
       return { success: false, error: errorMessage };
     }
   }
 
-  async createPaymentIntent(amount: number, currency: string = 'usd'): Promise<{ clientSecret?: string; error?: string }> {
+  async createPaymentIntent(
+    amount: number,
+    currency: string = 'usd'
+  ): Promise<{ clientSecret?: string; error?: string }> {
     try {
-      const response = await fetch(`${config.api.url}/api/payments/create-intent`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.api.key}`,
-        },
-        body: JSON.stringify({
-          amount: Math.round(amount * 100), // Convert to cents
-          currency,
-        }),
-      });
+      const response = await fetch(
+        `${config.api.url}/api/payments/create-intent`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.api.key}`,
+          },
+          body: JSON.stringify({
+            amount: Math.round(amount * 100), // Convert to cents
+            currency,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -129,23 +135,26 @@ class PaymentService {
 
       return { clientSecret: data.client_secret };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment setup failed';
-      captureError(error as Error, { context: 'payment_intent_creation' });
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Payment setup failed';
+
       return { error: errorMessage };
     }
   }
 
-  async confirmPayment(clientSecret: string, paymentMethodId: string): Promise<{ success: boolean; error?: string }> {
+  async confirmPayment(
+    clientSecret: string,
+    paymentMethodId: string
+  ): Promise<{ success: boolean; error?: string }> {
     try {
       // In a real implementation, you would use Stripe's confirmPayment
       // This is a simplified version for demo purposes
-      
+
       const response = await fetch(`${config.api.url}/api/payments/confirm`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.api.key}`,
+          Authorization: `Bearer ${config.api.key}`,
         },
         body: JSON.stringify({
           client_secret: clientSecret,
@@ -161,22 +170,24 @@ class PaymentService {
 
       return { success: true };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Payment confirmation failed';
-      captureError(error as Error, { context: 'payment_confirmation' });
-      
+      const errorMessage =
+        error instanceof Error ? error.message : 'Payment confirmation failed';
+
       return { success: false, error: errorMessage };
     }
   }
 
   getPackageById(packageId: string): ConnectsPackage | undefined {
-    return connectsPackages.find(p => p.id === packageId);
+    return connectsPackages.find((p) => p.id === packageId);
   }
 
   getAllPackages(): ConnectsPackage[] {
     return connectsPackages;
   }
 
-  calculateTotal(packageId: string): { amount: number; bonus: number; total: number; price: number } | null {
+  calculateTotal(
+    packageId: string
+  ): { amount: number; bonus: number; total: number; price: number } | null {
     const package_ = this.getPackageById(packageId);
     if (!package_) return null;
 
@@ -195,7 +206,8 @@ export const paymentService = new PaymentService();
 export const usePayments = () => {
   return {
     purchaseConnects: paymentService.purchaseConnects.bind(paymentService),
-    createPaymentIntent: paymentService.createPaymentIntent.bind(paymentService),
+    createPaymentIntent:
+      paymentService.createPaymentIntent.bind(paymentService),
     confirmPayment: paymentService.confirmPayment.bind(paymentService),
     getPackageById: paymentService.getPackageById.bind(paymentService),
     getAllPackages: paymentService.getAllPackages.bind(paymentService),

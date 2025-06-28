@@ -1,7 +1,6 @@
 import React, { Component, ReactNode } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { TriangleAlert as AlertTriangle, RefreshCw } from 'lucide-react-native';
-import { captureError } from '@/lib/sentry';
 
 interface Props {
   children: ReactNode;
@@ -24,10 +23,10 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    captureError(error, {
-      componentStack: errorInfo.componentStack,
-      errorBoundary: true,
-    });
+    // captureError(error, {
+    //   componentStack: errorInfo.componentStack,
+    //   errorBoundary: true,
+    // });
   }
 
   handleRetry = () => {
@@ -48,7 +47,10 @@ export default class ErrorBoundary extends Component<Props, State> {
             <Text style={styles.message}>
               We're sorry, but something unexpected happened. Please try again.
             </Text>
-            <TouchableOpacity style={styles.retryButton} onPress={this.handleRetry}>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={this.handleRetry}
+            >
               <RefreshCw size={20} color="#ffffff" />
               <Text style={styles.retryButtonText}>Try Again</Text>
             </TouchableOpacity>

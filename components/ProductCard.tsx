@@ -8,12 +8,13 @@ import {
   Dimensions,
   Animated,
 } from 'react-native';
-import { Heart, TrendingUp, Star, Shield, Award } from 'lucide-react-native';
+import { Heart, Star, Shield, Award } from 'lucide-react-native';
 import CountdownTimer from './CountdownTimer';
 import PulseAnimation from './PulseAnimation';
 
 const { width } = Dimensions.get('window');
-const cardWidth = (width - 48) / 2; // 2 cards per row with padding
+const COMPACT_CARD_WIDTH = (width - 16 * 3) / 2;
+const FULL_CARD_WIDTH = width - 16 * 2;
 
 interface ProductCardProps {
   id: string;
@@ -67,9 +68,9 @@ export default function ProductCard({
   compact = false,
 }: ProductCardProps) {
   const scaleAnim = useRef(new Animated.Value(1)).current;
-  const cardStyle = compact 
-    ? { width: cardWidth } 
-    : { width: width - 32 };
+  const cardStyle = compact
+    ? { width: COMPACT_CARD_WIDTH }
+    : { width: FULL_CARD_WIDTH };
 
   const RarityIcon = rarityIcons[rarity];
 
@@ -100,33 +101,26 @@ export default function ProductCard({
     >
       <View style={styles.imageContainer}>
         <Image source={{ uri: image }} style={styles.image} />
-        
-        {/* Rarity Badge */}
+
         {rarity !== 'common' && (
-          <View style={[styles.rarityBadge, { backgroundColor: rarityColors[rarity] }]}>
+          <View
+            style={[
+              styles.rarityBadge,
+              { backgroundColor: rarityColors[rarity] },
+            ]}
+          >
             {RarityIcon && <RarityIcon size={10} color="#ffffff" />}
             <Text style={styles.rarityText}>{rarity.toUpperCase()}</Text>
           </View>
         )}
-        
-        {/* Hot Badge */}
-        {isHot && (
-          <PulseAnimation duration={1500}>
-            <View style={styles.hotBadge}>
-              <TrendingUp size={12} color="#ffffff" />
-              <Text style={styles.hotText}>HOT</Text>
-            </View>
-          </PulseAnimation>
-        )}
 
-        {/* Featured Badge */}
         {isFeatured && (
           <View style={styles.featuredBadge}>
             <Star size={10} color="#ffffff" fill="#ffffff" />
             <Text style={styles.featuredText}>FEATURED</Text>
           </View>
         )}
-        
+
         <TouchableOpacity
           style={styles.favoriteButton}
           onPress={onFavoritePress}
@@ -144,7 +138,6 @@ export default function ProductCard({
           {title}
         </Text>
 
-        {/* Authenticity & Condition */}
         {(authenticity || condition) && (
           <View style={styles.detailsRow}>
             {authenticity && (
@@ -161,22 +154,25 @@ export default function ProductCard({
           </View>
         )}
 
-        {/* Estimated Value */}
         {estimatedValue && (
           <Text style={styles.estimatedValue}>
-            Est. ${estimatedValue.min}-${estimatedValue.max}
+            Est. ${estimatedValue.min.toLocaleString()}-$
+            {estimatedValue.max.toLocaleString()}
           </Text>
         )}
-        
+
         <View style={styles.bidContainer}>
           <Text style={styles.bidLabel}>Current Bid</Text>
-          <Text style={styles.bidAmount}>{currentBid.toLocaleString()} Connects</Text>
+          <Text style={styles.bidAmount}>
+            {currentBid.toLocaleString()}{' '}
+            <Text style={styles.bidCurrency}>Connects</Text>
+          </Text>
         </View>
 
         <CountdownTimer
           endTime={endTime}
           compact={true}
-          style={styles.timer}
+          style={[styles.timer]}
         />
       </View>
     </Animated.View>
@@ -231,6 +227,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 10,
+    zIndex: 3,
   },
   rarityText: {
     fontSize: 8,
@@ -238,38 +235,16 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     marginLeft: 2,
   },
-  hotBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 50,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#ef4444',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    shadowColor: '#ef4444',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  hotText: {
-    fontSize: 9,
-    fontFamily: 'Inter-Bold',
-    color: '#ffffff',
-    marginLeft: 3,
-  },
   featuredBadge: {
     position: 'absolute',
     top: 32,
     left: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#f59e0b',
     paddingHorizontal: 6,
     paddingVertical: 3,
     borderRadius: 10,
+    zIndex: 1,
   },
   featuredText: {
     fontSize: 8,
@@ -287,10 +262,10 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    backdropFilter: 'blur(10px)',
+    zIndex: 4,
   },
   content: {
-    padding: 16,
+    padding: 15,
   },
   title: {
     fontSize: 15,
@@ -340,7 +315,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     color: '#1e40af',
   },
+  bidCurrency: {
+    fontSize: 12,
+    fontFamily: 'Inter-Regular',
+    color: '#6b7280',
+    marginTop: 2,
+  },
   timer: {
     alignSelf: 'flex-start',
+  },
+  hotDealTimer: {
+    backgroundColor: '#ef4444', // Red background for hot deals
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
   },
 });
