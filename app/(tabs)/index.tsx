@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   Image,
   StatusBar,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -29,6 +30,8 @@ import {
   Users,
   Award,
   Flame,
+  TriangleAlert as AlertTriangle,
+  RefreshCw,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -38,154 +41,105 @@ import Animated, {
 } from 'react-native-reanimated';
 import ConnectsBalance from '@/components/ConnectsBalance';
 import CountdownTimer from '@/components/CountdownTimer';
+import { useAuth } from '@/hooks/useAuth';
+import { auctionAPI } from '@/lib/api';
+import { useSocket } from '@/lib/socket';
+import { useAdMob, AdMobBanner } from '@/lib/admob';
 
 const { width } = Dimensions.get('window');
-
-const featuredAuctions = [
-  {
-    id: '1',
-    title: 'Vintage Rolex Submariner',
-    description: 'Rare 1960s Rolex Submariner in pristine condition',
-    image:
-      'https://images.pexels.com/photos/190819/pexels-photo-190819.jpeg?auto=compress&cs=tinysrgb&w=800',
-    currentBid: 15750,
-    estimatedValue: { min: 18000, max: 25000 },
-    endTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    rarity: 'legendary',
-    isHot: true,
-    isFeatured: true,
-    bidCount: 47,
-    watchers: 234,
-  },
-  {
-    id: '2',
-    title: 'Limited Edition Hermès Birkin',
-    description: 'Exclusive crocodile leather Birkin bag with gold hardware',
-    image:
-      'https://images.pexels.com/photos/1152077/pexels-photo-1152077.jpeg?auto=compress&cs=tinysrgb&w=800',
-    currentBid: 28900,
-    estimatedValue: { min: 35000, max: 45000 },
-    endTime: new Date(Date.now() + 45 * 60 * 1000),
-    rarity: 'legendary',
-    isHot: true,
-    isFeatured: true,
-    bidCount: 89,
-    watchers: 567,
-  },
-  {
-    id: '3',
-    title: 'Rare Pokémon Card Collection',
-    description: 'First edition holographic Charizard and complete base set',
-    image:
-      'https://images.pexels.com/photos/1337247/pexels-photo-1337247.jpeg?auto=compress&cs=tinysrgb&w=800',
-    currentBid: 8750,
-    estimatedValue: { min: 12000, max: 18000 },
-    endTime: new Date(Date.now() + 6 * 60 * 60 * 1000),
-    rarity: 'epic',
-    isHot: false,
-    isFeatured: true,
-    bidCount: 156,
-    watchers: 892,
-  },
-];
-
-const hotAuctions = [
-  {
-    id: '4',
-    title: 'Vintage Gibson Les Paul',
-    description: '1959 Gibson Les Paul Standard in sunburst finish',
-    image:
-      'https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=800',
-    currentBid: 12500,
-    endTime: new Date(Date.now() + 3 * 60 * 60 * 1000),
-    rarity: 'epic',
-    isHot: true,
-    bidCount: 78,
-  },
-  {
-    id: '5',
-    title: 'Leica M6 Camera',
-    description: 'Professional 35mm rangefinder camera with original lens',
-    image:
-      'https://images.pexels.com/photos/90946/pexels-photo-90946.jpeg?auto=compress&cs=tinysrgb&w=800',
-    currentBid: 3250,
-    endTime: new Date(Date.now() + 4 * 60 * 60 * 1000),
-    rarity: 'rare',
-    isHot: true,
-    bidCount: 34,
-  },
-  {
-    id: '6',
-    title: 'Supreme Box Logo Hoodie',
-    description: 'Deadstock Supreme x Louis Vuitton collaboration hoodie',
-    image:
-      'https://images.pexels.com/photos/2529148/pexels-photo-2529148.jpeg?auto=compress&cs=tinysrgb&w=800',
-    currentBid: 1850,
-    endTime: new Date(Date.now() + 2 * 60 * 60 * 1000),
-    rarity: 'rare',
-    isHot: true,
-    bidCount: 92,
-  },
-  {
-    id: '7',
-    title: 'Vintage Omega Speedmaster',
-    description: 'Moon landing commemorative edition with original box',
-    image:
-      'https://images.pexels.com/photos/277390/pexels-photo-277390.jpeg?auto=compress&cs=tinysrgb&w=800',
-    currentBid: 6750,
-    endTime: new Date(Date.now() + 5 * 60 * 60 * 1000),
-    rarity: 'epic',
-    isHot: true,
-    bidCount: 67,
-  },
-];
-
-const endingSoon = [
-  {
-    id: '8',
-    title: 'Rare Wine Collection',
-    description: 'Vintage Bordeaux collection from prestigious vineyard',
-    image:
-      'https://images.pexels.com/photos/1407322/pexels-photo-1407322.jpeg?auto=compress&cs=tinysrgb&w=800',
-    currentBid: 4500,
-    endTime: new Date(Date.now() + 15 * 60 * 1000),
-    rarity: 'rare',
-    bidCount: 23,
-  },
-  {
-    id: '9',
-    title: 'Signed Basketball Jersey',
-    description: 'Michael Jordan signed Chicago Bulls jersey with COA',
-    image:
-      'https://images.pexels.com/photos/1884574/pexels-photo-1884574.jpeg?auto=compress&cs=tinysrgb&w=800',
-    currentBid: 2750,
-    endTime: new Date(Date.now() + 8 * 60 * 1000),
-    rarity: 'epic',
-    bidCount: 45,
-  },
-];
-
-const getRarityGradient = (rarity: string): [string, string] => {
-  switch (rarity) {
-    case 'legendary':
-      return ['#FFD700', '#FFA000'];
-    case 'epic':
-      return ['#9D4EDD', '#7B2CBF'];
-    case 'rare':
-      return ['#2196F3', '#1976D2'];
-    case 'uncommon':
-      return ['#4CAF50', '#388E3C'];
-    default:
-      return ['#9E9E9E', '#757575'];
-  }
-};
 
 export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  const { showInterstitial } = useAdMob();
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [favoriteItems, setFavoriteItems] = useState<string[]>(['2', '4']);
   const scrollY = useSharedValue(0);
+  
+  const [featuredAuctions, setFeaturedAuctions] = useState([]);
+  const [hotAuctions, setHotAuctions] = useState([]);
+  const [endingSoon, setEndingSoon] = useState([]);
+  
+  // Set up socket connection for real-time updates
+  const { on } = useSocket(user?.id);
+  
+  useEffect(() => {
+    fetchAuctions();
+    
+    // Show interstitial ad with 20% chance when opening the home screen
+    if (Math.random() < 0.2) {
+      showInterstitial();
+    }
+    
+    // Set up socket listeners for real-time updates
+    const unsubscribeAuctionUpdate = on('auction_update', handleAuctionUpdate);
+    const unsubscribeNewBid = on('new_bid', handleNewBid);
+    
+    return () => {
+      unsubscribeAuctionUpdate();
+      unsubscribeNewBid();
+    };
+  }, []);
+  
+  const handleAuctionUpdate = (data) => {
+    // Update auction data in real-time
+    updateAuctionData(data);
+  };
+  
+  const handleNewBid = (data) => {
+    // Update auction data when a new bid is placed
+    updateAuctionData(data.auction);
+  };
+  
+  const updateAuctionData = (updatedAuction) => {
+    // Update featured auctions
+    setFeaturedAuctions(prev => 
+      prev.map(auction => 
+        auction.id === updatedAuction.id ? { ...auction, ...updatedAuction } : auction
+      )
+    );
+    
+    // Update hot auctions
+    setHotAuctions(prev => 
+      prev.map(auction => 
+        auction.id === updatedAuction.id ? { ...auction, ...updatedAuction } : auction
+      )
+    );
+    
+    // Update ending soon auctions
+    setEndingSoon(prev => 
+      prev.map(auction => 
+        auction.id === updatedAuction.id ? { ...auction, ...updatedAuction } : auction
+      )
+    );
+  };
+
+  const fetchAuctions = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Fetch auctions from API
+      const [featuredData, hotData, endingSoonData] = await Promise.all([
+        auctionAPI.getFeatured(),
+        auctionAPI.getHot(),
+        auctionAPI.getEndingSoon(),
+      ]);
+      
+      setFeaturedAuctions(featuredData);
+      setHotAuctions(hotData);
+      setEndingSoon(endingSoonData);
+    } catch (error) {
+      console.error('Failed to fetch auctions:', error);
+      setError('Failed to load auctions. Please try again.');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
 
   const headerAnimatedStyle = useAnimatedStyle(() => {
     const opacity = interpolate(scrollY.value, [0, 100], [1, 0.9]);
@@ -203,8 +157,7 @@ export default function HomeScreen() {
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setRefreshing(false);
+    await fetchAuctions();
   };
 
   const toggleFavorite = (itemId: string) => {
@@ -269,11 +222,11 @@ export default function HomeScreen() {
           <View style={styles.featuredStats}>
             <View style={styles.statItem}>
               <Users size={12} color="#FFFFFF" />
-              <Text style={styles.statText}>{item.bidCount} bids</Text>
+              <Text style={styles.statText}>{item.bidCount || 0} bids</Text>
             </View>
             <View style={styles.statItem}>
               <Eye size={12} color="#FFFFFF" />
-              <Text style={styles.statText}>{item.watchers}</Text>
+              <Text style={styles.statText}>{item.watchers || 0}</Text>
             </View>
           </View>
           <View style={styles.bidInfo}>
@@ -282,7 +235,7 @@ export default function HomeScreen() {
               {item.currentBid.toLocaleString()} Connects
             </Text>
           </View>
-          <CountdownTimer endTime={item.endTime} compact style={styles.timer} />
+          <CountdownTimer endTime={new Date(item.endTime)} compact style={styles.timer} />
         </View>
       </View>
     </TouchableOpacity>
@@ -291,7 +244,7 @@ export default function HomeScreen() {
   // Modified HotAuctionCard to use a consistent size
   const CompactAuctionCard = ({ item }: { item: any }) => (
     <TouchableOpacity
-      style={styles.compactCard} // Use the new compactCard style
+      style={styles.compactCard}
       onPress={() => handleProductPress(item.id)}
       activeOpacity={0.9}
     >
@@ -331,13 +284,113 @@ export default function HomeScreen() {
         <View style={styles.compactStats}>
           <View style={styles.compactStatItem}>
             <TrendingUp size={10} color="#FF7F00" />
-            <Text style={styles.compactStatText}>{item.bidCount} bids</Text>
+            <Text style={styles.compactStatText}>{item.bidCount || 0} bids</Text>
           </View>
-          <CountdownTimer endTime={item.endTime} compact />
+          <CountdownTimer endTime={new Date(item.endTime)} compact />
         </View>
       </View>
     </TouchableOpacity>
   );
+  
+  const getRarityGradient = (rarity: string): [string, string] => {
+    switch (rarity) {
+      case 'legendary':
+        return ['#FFD700', '#FFA000'];
+      case 'epic':
+        return ['#9D4EDD', '#7B2CBF'];
+      case 'rare':
+        return ['#2196F3', '#1976D2'];
+      case 'uncommon':
+        return ['#4CAF50', '#388E3C'];
+      default:
+        return ['#9E9E9E', '#757575'];
+    }
+  };
+
+  if (loading && !featuredAuctions.length && !hotAuctions.length && !endingSoon.length) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="transparent"
+          translucent
+        />
+        
+        <Animated.View style={[styles.header, headerAnimatedStyle]}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <LinearGradient
+                colors={['#FF7F00', '#FF6B35']}
+                style={styles.logoContainer}
+              >
+                <Text style={styles.logo}>V</Text>
+              </LinearGradient>
+            </View>
+
+            <View style={styles.headerRight}>
+              <ConnectsBalance balance={user?.connectsBalance || 0} onPress={handleConnectsPress} />
+              <TouchableOpacity style={styles.notificationButton}>
+                <Bell size={20} color="#1A2B42" />
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationCount}>3</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+        
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#FF7F00" />
+          <Text style={styles.loadingText}>Loading auctions...</Text>
+        </View>
+      </View>
+    );
+  }
+  
+  if (error) {
+    return (
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        <StatusBar
+          barStyle="dark-content"
+          backgroundColor="transparent"
+          translucent
+        />
+        
+        <Animated.View style={[styles.header, headerAnimatedStyle]}>
+          <View style={styles.headerContent}>
+            <View style={styles.headerLeft}>
+              <LinearGradient
+                colors={['#FF7F00', '#FF6B35']}
+                style={styles.logoContainer}
+              >
+                <Text style={styles.logo}>V</Text>
+              </LinearGradient>
+            </View>
+
+            <View style={styles.headerRight}>
+              <ConnectsBalance balance={user?.connectsBalance || 0} onPress={handleConnectsPress} />
+              <TouchableOpacity style={styles.notificationButton}>
+                <Bell size={20} color="#1A2B42" />
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationCount}>3</Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
+        
+        <View style={styles.errorContainer}>
+          <AlertTriangle size={64} color="#EF4444" />
+          <Text style={styles.errorTitle}>Something went wrong</Text>
+          <Text style={styles.errorMessage}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchAuctions}>
+            <RefreshCw size={16} color="#FFFFFF" />
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -359,7 +412,7 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.headerRight}>
-            <ConnectsBalance balance={2750} onPress={handleConnectsPress} />
+            <ConnectsBalance balance={user?.connectsBalance || 0} onPress={handleConnectsPress} />
             <TouchableOpacity style={styles.notificationButton}>
               <Bell size={20} color="#1A2B42" />
               <View style={styles.notificationBadge}>
@@ -381,6 +434,17 @@ export default function HomeScreen() {
         }}
         scrollEventThrottle={16}
       >
+        {/* Banner Ad */}
+        {Platform.OS !== 'web' && (
+          <View style={styles.bannerAdContainer}>
+            <AdMobBanner
+              bannerSize="smartBannerPortrait"
+              servePersonalizedAds={true}
+              onDidFailToReceiveAdWithError={(error) => console.error(error)}
+            />
+          </View>
+        )}
+        
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <View style={styles.sectionTitleContainer}>
@@ -392,25 +456,26 @@ export default function HomeScreen() {
               </LinearGradient>
               <Text style={styles.sectionTitle}>Curator's Choice</Text>
             </View>
-            <TouchableOpacity style={styles.seeAllButton}>
-              <Text
-                style={styles.seeAllText}
-                onAccessibilityTap={handleSeeAllPress}
-              >
-                See All
-              </Text>
+            <TouchableOpacity style={styles.seeAllButton} onPress={handleSeeAllPress}>
+              <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.featuredScroll}
-          >
-            {featuredAuctions.map((item, index) => (
-              <FeaturedCard key={item.id} item={item} index={index} />
-            ))}
-          </ScrollView>
+          {featuredAuctions.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.featuredScroll}
+            >
+              {featuredAuctions.map((item, index) => (
+                <FeaturedCard key={item.id} item={item} index={index} />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyStateContainer}>
+              <Text style={styles.emptyStateText}>No featured auctions available</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -429,15 +494,21 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.compactHorizontalScroll} // New style for horizontal compact cards
-          >
-            {endingSoon.map((item) => (
-              <CompactAuctionCard key={item.id} item={item} />
-            ))}
-          </ScrollView>
+          {endingSoon.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.compactHorizontalScroll}
+            >
+              {endingSoon.map((item) => (
+                <CompactAuctionCard key={item.id} item={item} />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyStateContainer}>
+              <Text style={styles.emptyStateText}>No auctions ending soon</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -453,15 +524,21 @@ export default function HomeScreen() {
             </View>
           </View>
 
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.compactHorizontalScroll} // New style for horizontal compact cards
-          >
-            {hotAuctions.map((item) => (
-              <CompactAuctionCard key={item.id} item={item} />
-            ))}
-          </ScrollView>
+          {hotAuctions.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.compactHorizontalScroll}
+            >
+              {hotAuctions.map((item) => (
+                <CompactAuctionCard key={item.id} item={item} />
+              ))}
+            </ScrollView>
+          ) : (
+            <View style={styles.emptyStateContainer}>
+              <Text style={styles.emptyStateText}>No trending auctions available</Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.section}>
@@ -490,6 +567,17 @@ export default function HomeScreen() {
             </View>
           </LinearGradient>
         </View>
+        
+        {/* Bottom Banner Ad */}
+        {Platform.OS !== 'web' && (
+          <View style={styles.bannerAdContainer}>
+            <AdMobBanner
+              bannerSize="smartBannerPortrait"
+              servePersonalizedAds={true}
+              onDidFailToReceiveAdWithError={(error) => console.error(error)}
+            />
+          </View>
+        )}
 
         <View style={styles.bottomPadding} />
       </Animated.ScrollView>
@@ -888,7 +976,67 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     marginLeft: 10,
   },
+  bannerAdContainer: {
+    alignItems: 'center',
+    marginVertical: 10,
+  },
   bottomPadding: {
     height: 120,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+    marginTop: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontFamily: 'Inter-Bold',
+    color: '#1A2B42',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 16,
+    fontFamily: 'Inter-Regular',
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#1e40af',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+  },
+  retryButtonText: {
+    fontSize: 16,
+    fontFamily: 'Inter-SemiBold',
+    color: '#FFFFFF',
+    marginLeft: 8,
+  },
+  emptyStateContainer: {
+    padding: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyStateText: {
+    fontSize: 16,
+    fontFamily: 'Inter-Medium',
+    color: '#6B7280',
+    textAlign: 'center',
   },
 });

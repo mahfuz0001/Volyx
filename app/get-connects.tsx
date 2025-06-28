@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -23,72 +24,28 @@ import {
 } from 'lucide-react-native';
 import ConnectsBalance from '@/components/ConnectsBalance';
 import AnimatedCard from '@/components/AnimatedCard';
-import { mockUserData } from '@/data/mockData';
-
-interface ConnectsPack {
-  id: string;
-  amount: number;
-  bonus: number;
-  price: number;
-  popular?: boolean;
-  bestValue?: boolean;
-  icon: any;
-  color: string;
-  description: string;
-}
-
-const connectsPacks: ConnectsPack[] = [
-  {
-    id: '1',
-    amount: 100,
-    bonus: 0,
-    price: 0.99,
-    icon: Coins,
-    color: '#f59e0b',
-    description: 'Perfect for testing the waters',
-  },
-  {
-    id: '2',
-    amount: 500,
-    bonus: 50,
-    price: 4.99,
-    popular: true,
-    icon: Gift,
-    color: '#1e40af',
-    description: 'Most popular choice',
-  },
-  {
-    id: '3',
-    amount: 1000,
-    bonus: 200,
-    price: 9.99,
-    bestValue: true,
-    icon: Crown,
-    color: '#7c3aed',
-    description: 'Best value for serious bidders',
-  },
-  {
-    id: '4',
-    amount: 2500,
-    bonus: 750,
-    price: 19.99,
-    icon: Zap,
-    color: '#ef4444',
-    description: 'For the ultimate collector',
-  },
-];
-
-const videoRewards = [
-  { connects: 10, description: 'Standard video ad' },
-  { connects: 15, description: 'Interactive ad' },
-  { connects: 20, description: 'Survey completion' },
-];
+import { useAuth } from '@/hooks/useAuth';
+import { usersAPI } from '@/lib/api';
+import { useAdMob, AdMobBanner } from '@/lib/admob';
+import { useIAP, CONNECTS_PACKAGES } from '@/lib/iap';
 
 export default function GetConnectsScreen() {
   const router = useRouter();
+  const { user } = useAuth();
+  const { showRewarded } = useAdMob();
+  const { products, loading: iapLoading, purchaseConnects } = useIAP(user?.id);
+  
   const [isLoadingAd, setIsLoadingAd] = useState(false);
-  const [adsWatchedToday, setAdsWatchedToday] = useState(3);
+  const [adsWatchedToday, setAdsWatchedToday] = useState(0);
   const [dailyAdLimit] = useState(10);
+  const [connectsBalance, setConnectsBalance] = useState(user?.connectsBalance || 0);
+  const [isProcessingPurchase, setIsProcessingPurchase] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setConnectsBalance(user.connectsBalance);
+    }
+  }, [user]);
 
   const handleWatchAd = async () => {
     if (adsWatchedToday >= dailyAdLimit) {
@@ -102,33 +59,95 @@ export default function GetConnectsScreen() {
 
     setIsLoadingAd(true);
     
-    // Simulate ad loading and watching
-    setTimeout(() => {
-      setIsLoadingAd(false);
-      setAdsWatchedToday(prev => prev + 1);
-      const reward = videoRewards[Math.floor(Math.random() * videoRewards.length)];
+    try {
+      // Show rewarded ad
+      const result = await showRewarded();
+      
+      if (result.success && result.reward) {
+        // User completed the ad and earned the reward
+        const connectsEarned = result.reward.amount || 10;
+        
+        // Update user's connects balance in the database
+        if (user) {
+          await usersAPI.watchVideo(user.id, 'device_fingerprint');
+          
+          // Update local state
+          setConnectsBalance(prev => prev + connectsEarned);
+          setAdsWatchedToday(prev => prev + 1);
+          
+          Alert.alert(
+            'Connects Earned!', 
+            `You earned ${connectsEarned} Connects for watching the ad. Keep collecting!`,
+            [{ text: 'Awesome!' }]
+          );
+        }
+      } else {
+        // User didn't complete the ad or there was an error
+        Alert.alert(
+          'No Reward Earned', 
+          'You need to watch the complete ad to earn Connects.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error showing rewarded ad:', error);
       Alert.alert(
-        'Connects Earned!', 
-        `You earned ${reward.connects} Connects for watching the ad. Keep collecting!`,
-        [{ text: 'Awesome!' }]
+        'Error', 
+        'There was a problem loading the ad. Please try again later.',
+        [{ text: 'OK' }]
       );
-    }, 3000);
+    } finally {
+      setIsLoadingAd(false);
+    }
   };
 
-  const handlePurchasePack = (pack: ConnectsPack) => {
+  const handlePurchasePack = async (packageId: string) => {
+    if (!user) {
+      Alert.alert('Error', 'You must be logged in to purchase Connects');
+      return;
+    }
+    
+    // Find the package
+    const pack = CONNECTS_PACKAGES.find(p => p.id === packageId);
+    if (!pack) {
+      Alert.alert('Error', 'Invalid package selected');
+      return;
+    }
+    
     Alert.alert(
       'Purchase Connects',
-      `Purchase ${pack.amount.toLocaleString()}${pack.bonus > 0 ? ` + ${pack.bonus} bonus` : ''} Connects for $${pack.price}?\n\n${pack.description}`,
+      `Purchase ${pack.amount.toLocaleString()}${pack.bonus > 0 ? ` + ${pack.bonus} bonus` : ''} Connects for $${pack.price}?\n\n${pack.name}`,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
           text: 'Purchase', 
-          onPress: () => {
-            Alert.alert(
-              'Purchase Successful!', 
-              `You received ${(pack.amount + pack.bonus).toLocaleString()} Connects! Start bidding on exclusive items now.`,
-              [{ text: 'Start Bidding!' }]
-            );
+          onPress: async () => {
+            try {
+              setIsProcessingPurchase(true);
+              
+              // Process the purchase
+              const purchase = await purchaseConnects(packageId);
+              
+              if (purchase) {
+                // Update local state
+                setConnectsBalance(prev => prev + pack.amount + pack.bonus);
+                
+                Alert.alert(
+                  'Purchase Successful!', 
+                  `You received ${(pack.amount + pack.bonus).toLocaleString()} Connects! Start bidding on exclusive items now.`,
+                  [{ text: 'Start Bidding!' }]
+                );
+              }
+            } catch (error) {
+              console.error('Purchase error:', error);
+              Alert.alert(
+                'Purchase Failed', 
+                'There was a problem processing your purchase. Please try again later.',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setIsProcessingPurchase(false);
+            }
           }
         },
       ]
@@ -156,7 +175,7 @@ export default function GetConnectsScreen() {
         {/* Current Balance */}
         <AnimatedCard delay={100} style={styles.balanceSection}>
           <ConnectsBalance
-            balance={mockUserData.connectsBalance}
+            balance={connectsBalance}
             onPress={() => {}}
             showAddButton={false}
           />
@@ -190,7 +209,7 @@ export default function GetConnectsScreen() {
             <TouchableOpacity
               style={[
                 styles.watchAdButton,
-                !canWatchAds && styles.watchAdButtonDisabled
+                (!canWatchAds || isLoadingAd) && styles.watchAdButtonDisabled
               ]}
               onPress={handleWatchAd}
               disabled={!canWatchAds || isLoadingAd}
@@ -220,15 +239,36 @@ export default function GetConnectsScreen() {
           {/* Video Rewards Info */}
           <View style={styles.rewardsInfo}>
             <Text style={styles.rewardsTitle}>Earning Opportunities:</Text>
-            {videoRewards.map((reward, index) => (
-              <View key={index} style={styles.rewardItem}>
-                <Coins size={14} color="#f59e0b" />
-                <Text style={styles.rewardText}>
-                  {reward.connects} Connects - {reward.description}
-                </Text>
-              </View>
-            ))}
+            <View style={styles.rewardItem}>
+              <Coins size={14} color="#f59e0b" />
+              <Text style={styles.rewardText}>
+                10 Connects - Standard video ad
+              </Text>
+            </View>
+            <View style={styles.rewardItem}>
+              <Coins size={14} color="#f59e0b" />
+              <Text style={styles.rewardText}>
+                15 Connects - Interactive ad
+              </Text>
+            </View>
+            <View style={styles.rewardItem}>
+              <Coins size={14} color="#f59e0b" />
+              <Text style={styles.rewardText}>
+                20 Connects - Survey completion
+              </Text>
+            </View>
           </View>
+          
+          {/* Banner Ad */}
+          {Platform.OS !== 'web' && (
+            <View style={styles.bannerAdContainer}>
+              <AdMobBanner
+                bannerSize="smartBannerPortrait"
+                servePersonalizedAds={true}
+                onDidFailToReceiveAdWithError={(error) => console.error(error)}
+              />
+            </View>
+          )}
         </AnimatedCard>
 
         {/* Purchase Connects */}
@@ -238,67 +278,82 @@ export default function GetConnectsScreen() {
             Get instant Connects to bid on exclusive collectibles and rare items
           </Text>
           
-          <View style={styles.packsGrid}>
-            {connectsPacks.map((pack, index) => {
-              const IconComponent = pack.icon;
-              const totalConnects = pack.amount + pack.bonus;
-              
-              return (
-                <AnimatedCard key={pack.id} delay={400 + index * 100} style={styles.packContainer}>
-                  {pack.popular && (
-                    <View style={styles.popularBadge}>
-                      <Star size={12} color="#ffffff" fill="#ffffff" />
-                      <Text style={styles.popularText}>POPULAR</Text>
-                    </View>
-                  )}
-                  
-                  {pack.bestValue && (
-                    <View style={styles.bestValueBadge}>
-                      <Award size={12} color="#ffffff" fill="#ffffff" />
-                      <Text style={styles.bestValueText}>BEST VALUE</Text>
-                    </View>
-                  )}
-                  
-                  <TouchableOpacity
-                    style={[
-                      styles.packCard,
-                      pack.popular && styles.popularPack,
-                      pack.bestValue && styles.bestValuePack,
-                    ]}
-                    onPress={() => handlePurchasePack(pack)}
-                  >
-                    <View style={[styles.packIcon, { backgroundColor: pack.color }]}>
-                      <IconComponent size={24} color="#ffffff" />
-                    </View>
-                    
-                    <Text style={styles.packAmount}>
-                      {pack.amount.toLocaleString()}
-                    </Text>
-                    
-                    {pack.bonus > 0 && (
-                      <View style={styles.bonusContainer}>
-                        <Text style={styles.bonusText}>
-                          +{pack.bonus} BONUS
-                        </Text>
+          {iapLoading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#FF7F00" />
+              <Text style={styles.loadingText}>Loading available packages...</Text>
+            </View>
+          ) : (
+            <View style={styles.packsGrid}>
+              {CONNECTS_PACKAGES.map((pack, index) => {
+                const IconComponent = pack.id.includes('100') ? Coins :
+                                      pack.id.includes('500') ? Gift :
+                                      pack.id.includes('1000') ? Crown : Zap;
+                const totalConnects = pack.amount + pack.bonus;
+                
+                // Find the actual product from IAP
+                const product = products.find(p => p.productId === pack.id);
+                const price = product?.price || `$${pack.price}`;
+                
+                return (
+                  <AnimatedCard key={pack.id} delay={400 + index * 100} style={styles.packContainer}>
+                    {pack.popular && (
+                      <View style={styles.popularBadge}>
+                        <Star size={12} color="#ffffff" fill="#ffffff" />
+                        <Text style={styles.popularText}>POPULAR</Text>
                       </View>
                     )}
                     
-                    <Text style={styles.packTotal}>
-                      Total: {totalConnects.toLocaleString()} Connects
-                    </Text>
+                    {pack.bestValue && (
+                      <View style={styles.bestValueBadge}>
+                        <Award size={12} color="#ffffff" fill="#ffffff" />
+                        <Text style={styles.bestValueText}>BEST VALUE</Text>
+                      </View>
+                    )}
                     
-                    <Text style={styles.packDescription}>
-                      {pack.description}
-                    </Text>
-                    
-                    <View style={styles.packPrice}>
-                      <Text style={styles.priceText}>${pack.price}</Text>
-                    </View>
-                  </TouchableOpacity>
-                </AnimatedCard>
-              );
-            })}
-          </View>
+                    <TouchableOpacity
+                      style={[
+                        styles.packCard,
+                        pack.popular && styles.popularPack,
+                        pack.bestValue && styles.bestValuePack,
+                        isProcessingPurchase && styles.packCardDisabled
+                      ]}
+                      onPress={() => handlePurchasePack(pack.id)}
+                      disabled={isProcessingPurchase}
+                    >
+                      <View style={[styles.packIcon, { backgroundColor: pack.popular ? '#ef4444' : pack.bestValue ? '#7c3aed' : '#FF7F00' }]}>
+                        <IconComponent size={24} color="#ffffff" />
+                      </View>
+                      
+                      <Text style={styles.packAmount}>
+                        {pack.amount.toLocaleString()}
+                      </Text>
+                      
+                      {pack.bonus > 0 && (
+                        <View style={styles.bonusContainer}>
+                          <Text style={styles.bonusText}>
+                            +{pack.bonus} BONUS
+                          </Text>
+                        </View>
+                      )}
+                      
+                      <Text style={styles.packTotal}>
+                        Total: {totalConnects.toLocaleString()} Connects
+                      </Text>
+                      
+                      <Text style={styles.packDescription}>
+                        {pack.name}
+                      </Text>
+                      
+                      <View style={styles.packPrice}>
+                        <Text style={styles.priceText}>{price}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  </AnimatedCard>
+                );
+              })}
+            </View>
+          )}
         </AnimatedCard>
 
         {/* Value Proposition */}
@@ -331,6 +386,19 @@ export default function GetConnectsScreen() {
             </View>
           </View>
         </AnimatedCard>
+        
+        {/* Bottom Banner Ad */}
+        {Platform.OS !== 'web' && (
+          <View style={styles.bottomBannerAdContainer}>
+            <AdMobBanner
+              bannerSize="smartBannerPortrait"
+              servePersonalizedAds={true}
+              onDidFailToReceiveAdWithError={(error) => console.error(error)}
+            />
+          </View>
+        )}
+        
+        <View style={styles.bottomPadding} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -438,6 +506,7 @@ const styles = StyleSheet.create({
   watchAdButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#16a34a',
     paddingHorizontal: 20,
     paddingVertical: 12,
@@ -495,6 +564,10 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Regular',
     color: '#6b7280',
     marginLeft: 8,
+  },
+  bannerAdContainer: {
+    marginTop: 16,
+    alignItems: 'center',
   },
   packsGrid: {
     flexDirection: 'row',
@@ -556,6 +629,9 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 8,
     elevation: 4,
+  },
+  packCardDisabled: {
+    opacity: 0.6,
   },
   popularPack: {
     borderColor: '#ef4444',
@@ -641,5 +717,23 @@ const styles = StyleSheet.create({
     color: '#374151',
     marginLeft: 12,
     flex: 1,
+  },
+  bottomBannerAdContainer: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  bottomPadding: {
+    height: 100,
+  },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 40,
+  },
+  loadingText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Medium',
+    color: '#6b7280',
+    marginTop: 12,
   },
 });

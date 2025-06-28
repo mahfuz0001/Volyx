@@ -1,6 +1,8 @@
 import { useState, useEffect, createContext, useContext } from 'react';
 import { useAuth as useClerkAuth, useUser } from '@clerk/clerk-expo';
-import { createOrUpdateUser, getUserByClerkId } from '@/lib/auth';
+import { createOrUpdateUser, getUserByClerkId, createAdminToken } from '@/lib/auth';
+import { analytics } from '@/lib/analytics';
+import * as SecureStore from 'expo-secure-store';
 
 interface User {
   id: string;
@@ -24,6 +26,7 @@ interface AuthContextType {
   signUp: (emailAddress: string, password: string, name: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   resetPassword: (emailAddress: string) => Promise<boolean>;
+  adminToken: string | null;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -41,6 +44,7 @@ export const useAuthProvider = () => {
   const { user: clerkUser, isLoaded: isUserLoaded } = useUser();
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [adminToken, setAdminToken] = useState<string | null>(null);
 
   useEffect(() => {
     const syncUser = async () => {
@@ -69,12 +73,32 @@ export const useAuthProvider = () => {
           });
 
           setUser(dbUser as User);
+          
+          // Track user login in analytics
+          analytics.trackEvent({
+            name: 'user_login',
+            properties: {
+              user_id: dbUser?.id,
+              email: primaryEmail,
+              is_admin: dbUser?.isAdmin,
+            },
+          });
+          
+          // If user is admin, create admin token
+          if (dbUser?.isAdmin) {
+            const token = await createAdminToken(dbUser.id);
+            setAdminToken(token);
+            await SecureStore.setItemAsync('admin_token', token);
+          }
         } else {
           setUser(null);
+          setAdminToken(null);
+          await SecureStore.deleteItemAsync('admin_token');
         }
       } catch (error) {
         console.error('Error syncing user:', error);
         setUser(null);
+        setAdminToken(null);
       } finally {
         setIsLoading(false);
       }
@@ -82,6 +106,22 @@ export const useAuthProvider = () => {
 
     syncUser();
   }, [isLoaded, isUserLoaded, clerkUser]);
+
+  // Load admin token from storage on startup
+  useEffect(() => {
+    const loadAdminToken = async () => {
+      try {
+        const token = await SecureStore.getItemAsync('admin_token');
+        if (token) {
+          setAdminToken(token);
+        }
+      } catch (error) {
+        console.error('Error loading admin token:', error);
+      }
+    };
+    
+    loadAdminToken();
+  }, []);
 
   const handleSignIn = async (emailAddress: string, password: string): Promise<boolean> => {
     try {
@@ -120,6 +160,15 @@ export const useAuthProvider = () => {
 
       if (result.status === 'complete') {
         // User is signed up and signed in
+        
+        // Track user registration in analytics
+        analytics.trackEvent({
+          name: 'user_registered',
+          properties: {
+            email: emailAddress,
+          },
+        });
+        
         return true;
       } else {
         console.error('Sign up failed:', result);
@@ -136,6 +185,23 @@ export const useAuthProvider = () => {
   const handleSignOut = async () => {
     try {
       setIsLoading(true);
+      
+      // Track user logout in analytics
+      if (user) {
+        analytics.trackEvent({
+          name: 'user_logout',
+          properties: {
+            user_id: user.id,
+          },
+        });
+      }
+      
+      // Clear admin token
+      if (adminToken) {
+        await SecureStore.deleteItemAsync('admin_token');
+        setAdminToken(null);
+      }
+      
       await signOut();
       setUser(null);
     } catch (error) {
@@ -155,6 +221,14 @@ export const useAuthProvider = () => {
         identifier: emailAddress,
       });
       
+      // Track password reset request in analytics
+      analytics.trackEvent({
+        name: 'password_reset_requested',
+        properties: {
+          email: emailAddress,
+        },
+      });
+      
       return true;
     } catch (error) {
       console.error('Reset password error:', error);
@@ -171,6 +245,7 @@ export const useAuthProvider = () => {
     signUp: handleSignUp,
     signOut: handleSignOut,
     resetPassword: handleResetPassword,
+    adminToken,
   };
 };
 

@@ -83,6 +83,37 @@ export const config = {
       process.env.EXPO_PUBLIC_RATE_LIMIT_MAX_REQUESTS || '100'
     ),
   },
+  
+  // Clerk Authentication
+  clerk: {
+    publishableKey: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || '',
+  },
+  
+  // AdMob
+  ads: {
+    iosBannerId: process.env.EXPO_PUBLIC_ADMOB_IOS_BANNER_ID || '',
+    androidBannerId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_BANNER_ID || '',
+    iosInterstitialId: process.env.EXPO_PUBLIC_ADMOB_IOS_INTERSTITIAL_ID || '',
+    androidInterstitialId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_INTERSTITIAL_ID || '',
+    iosRewardedId: process.env.EXPO_PUBLIC_ADMOB_IOS_REWARDED_ID || '',
+    androidRewardedId: process.env.EXPO_PUBLIC_ADMOB_ANDROID_REWARDED_ID || '',
+  },
+  
+  // Socket.io
+  socket: {
+    url: process.env.EXPO_PUBLIC_SOCKET_URL || 'http://localhost:3001',
+  },
+  
+  // Firebase
+  firebase: {
+    apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY || '',
+    authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || '',
+    projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID || '',
+    storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET || '',
+    messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID || '',
+    appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID || '',
+    measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID || '',
+  },
 };
 
 // Validation function to check required environment variables
@@ -90,6 +121,7 @@ export const validateConfig = () => {
   const requiredVars = [
     'EXPO_PUBLIC_SANITY_PROJECT_ID',
     'EXPO_PUBLIC_DATABASE_URL',
+    'EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY',
   ];
 
   const missing = requiredVars.filter((varName) => !process.env[varName]);

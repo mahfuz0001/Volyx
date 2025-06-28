@@ -15,12 +15,13 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { ClerkProvider } from '@clerk/clerk-expo';
 import { tokenCache } from '@/lib/clerk';
+import { config } from '@/lib/config';
 
 // Prevent splash screen from auto-hiding
 SplashScreen.preventAutoHideAsync();
 
 // Clerk publishable key
-const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_Y2xlcmsuYXVjdGlvbi52b2x5eC5jb20k';
+const CLERK_PUBLISHABLE_KEY = config.clerk.publishableKey;
 
 function RootLayoutNav() {
   return (

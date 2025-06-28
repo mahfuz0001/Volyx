@@ -397,10 +397,13 @@ export default function AuthScreen() {
                  'Password Reset'}
               </Text>
               <Text style={styles.subHeaderText}>
-                {authMode === 'login' ? 'Sign in to continue bidding' : 
-                 authMode === 'register' ? 'Join the auction community' : 
-                 authMode === 'forgotPassword' ? 'Get back into your account' : 
-                 'Check your email for instructions'}
+                {authMode === 'login'
+                  ? 'Sign in to continue bidding'
+                  : authMode === 'register'
+                  ? 'Join the auction community'
+                  : authMode === 'forgotPassword'
+                  ? 'Get back into your account'
+                  : 'Check your email for instructions'}
               </Text>
             </AnimatedCard>
 
@@ -546,14 +549,14 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     backgroundColor: '#f9fafb',
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 10, // Adjusted padding for smaller height
   },
   inputIcon: {
     marginRight: 12,
   },
   input: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 10, // Adjusted padding for smaller height
     fontSize: 16,
     fontFamily: 'Inter-Regular',
     color: '#111827',
@@ -623,8 +626,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
   },
   socialButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: 'row', // Added for icon alignment
+    justifyContent: 'center', // Added for icon alignment
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#e5e7eb',
@@ -635,7 +638,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
   },
   socialIcon: {
-    marginRight: 10,
+    marginRight: 10, // Space between icon and text
   },
   socialButtonText: {
     fontSize: 16,
@@ -643,11 +646,11 @@ const styles = StyleSheet.create({
     color: '#374151',
   },
   googleSocialButton: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: 'row', // Added for icon alignment
+    justifyContent: 'center', // Added for icon alignment
     alignItems: 'center',
-    backgroundColor: '#4285F4',
-    borderColor: '#4285F4',
+    backgroundColor: '#4285F4', // Google brand color
+    borderColor: '#4285F4', // Match border to background
     paddingVertical: 16,
     borderRadius: 16,
     marginBottom: 12,
@@ -660,7 +663,7 @@ const styles = StyleSheet.create({
   googleSocialButtonText: {
     fontSize: 16,
     fontFamily: 'Inter-Medium',
-    color: '#ffffff',
+    color: '#ffffff', // White text for contrast
   },
   footer: {
     flexDirection: 'row',
